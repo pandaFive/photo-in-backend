@@ -4,7 +4,7 @@
 	"name": "Ruby on Rails & Postgres",
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "app",
-	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -14,9 +14,24 @@
 		5432
 	],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "bundle install && rake db:setup",
+	// "postCreateCommand": "bundle install && rake db:setup",
+	"postCreateCommand": "bundle install",
 	// Configure tool-specific properties.
 	// "customizations": {},
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"Shopify.ruby-lsp",
+				"rubocop.vscode-rubocop",
+				"streetsidesoftware.code-spell-checker",
+				"mosapride.zenkaku",
+				"oderwat.indent-rainbow",
+				"VisualStudioExptTeam.vscodeintellicode",
+				"shardulm94.trailing-spaces",
+				"bung87.rails"
+			]
+		}
+	}
 }
