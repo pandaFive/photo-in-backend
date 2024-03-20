@@ -8,6 +8,7 @@ class Task < ApplicationRecord
 
   has_many :comments
   has_many :completed_tasks
+  has_many :assign_cycles
 
   def add_tag(tag)
     self.tags << tag
@@ -15,5 +16,10 @@ class Task < ApplicationRecord
 
   def remove_tag(tag)
     self.tags.destroy(tag)
+  end
+
+  def create_new_cycle
+    cycle = self.assign_cycles.create
+    cycle
   end
 end

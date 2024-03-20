@@ -16,6 +16,7 @@ class Api::TasksController < ApplicationController
     task.area_id = 1
 
     if task.save
+      cycle = task.create_new_cycle
       render json: task
     else
       render json: { message: task.errors, status: 422 }, status: :unprocessable_entity
