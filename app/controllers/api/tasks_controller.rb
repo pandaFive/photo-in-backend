@@ -17,7 +17,11 @@ class Api::TasksController < ApplicationController
 
     if task.save
       cycle = task.create_new_cycle
-      render json: task
+      if cycle.assign
+        render json: task
+      else
+        render json: { status: 422 }
+      end
     else
       render json: { message: task.errors, status: 422 }, status: :unprocessable_entity
     end
@@ -64,6 +68,27 @@ class Api::TasksController < ApplicationController
       render json: task
     else
       render json: { message: task.errors, status: 422 }, status: :unprocessable_entity
+    end
+  end
+
+  def create_new_cycle
+    task = Task.find(params[:task_id])
+    cycle = task.create_new_cycle
+    if cycle.assign
+      render json: task
+    else
+      render json: { status: 422 }
+    end
+  end
+
+  def ng
+    assign_history = AssignHistory.find(params[:history_id])
+    assign_history.update(ng: true)
+    cycle = AssignCycle.find(assign_history[:assign_cycle_id])
+    if cycle.assign
+      render json: { message: "complete", result: true }
+    else
+      render json: { message: "faild", result: false }
     end
   end
 

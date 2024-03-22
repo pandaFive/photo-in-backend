@@ -11,9 +11,9 @@ class AssignCycle < ApplicationRecord
     current_assign = Assign_historie.new(account_id: target.id, assign_cycle_id: self.id)
 
     if current_assign.save
-      current_assign
+      true
     else
-      current_assign.errors
+      false
     end
   end
 
@@ -21,15 +21,13 @@ class AssignCycle < ApplicationRecord
     task = self.try(:task)
 
     accounts = Account.joins(:areas)
-                  .includes(:ng_histories)
+                  .includes(:assign_histories)
                   .where(areas: { name: task.area.name })
-                  .where.not(ng_histories: { assign_cycle_id: self.id })
-                  .left_joins(:assign_histories, :ng_histories, :is_completeds)
-                  .where(assign_histories: { id: nil })
-                  .where(ng_histories: { id: nil })
-                  .where(is_completeds: { id: nil })
+                  .where.not(assign_histories: { assign_cycle_id: self.id })
+                  .where(assign_histories: { ng: false })
+                  .where(assign_histories: { completed: false })
                   .group(:id)
-                  .select("accounts.*, COUNT(assign_histories.id) AS assign_count")
+                  .select("accounts.*, COUNT(assign_histories.id) AS assing_count")
                   .having("assign_count < accounts.capacity * 4")
   end
 end

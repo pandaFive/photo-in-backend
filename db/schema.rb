@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_03_18_181220) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_22_165847) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -50,8 +50,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_181220) do
     t.bigint "assign_cycle_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "ng", default: false
+    t.boolean "completed", default: false
+    t.datetime "completed_at"
     t.index ["account_id"], name: "index_assign_histories_on_account_id"
     t.index ["assign_cycle_id"], name: "index_assign_histories_on_assign_cycle_id"
+    t.index ["completed"], name: "index_assign_histories_on_completed"
+    t.index ["ng"], name: "index_assign_histories_on_ng"
   end
 
   create_table "comments", force: :cascade do |t|
@@ -62,24 +67,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_181220) do
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_comments_on_account_id"
     t.index ["task_id"], name: "index_comments_on_task_id"
-  end
-
-  create_table "completed_tasks", force: :cascade do |t|
-    t.bigint "task_id", null: false
-    t.bigint "account_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_completed_tasks_on_account_id"
-    t.index ["task_id"], name: "index_completed_tasks_on_task_id"
-  end
-
-  create_table "ng_histories", force: :cascade do |t|
-    t.bigint "assign_cycle_id", null: false
-    t.bigint "account_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_ng_histories_on_account_id"
-    t.index ["assign_cycle_id"], name: "index_ng_histories_on_assign_cycle_id"
   end
 
   create_table "tag_accounts", force: :cascade do |t|
@@ -109,7 +96,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_181220) do
   create_table "tasks", force: :cascade do |t|
     t.bigint "area_id", null: false
     t.string "task_title", null: false
-    t.boolean "is_complete", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["area_id"], name: "index_tasks_on_area_id"
@@ -122,10 +108,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_181220) do
   add_foreign_key "assign_histories", "assign_cycles"
   add_foreign_key "comments", "accounts"
   add_foreign_key "comments", "tasks"
-  add_foreign_key "completed_tasks", "accounts"
-  add_foreign_key "completed_tasks", "tasks"
-  add_foreign_key "ng_histories", "accounts"
-  add_foreign_key "ng_histories", "assign_cycles"
   add_foreign_key "tag_accounts", "accounts"
   add_foreign_key "tag_accounts", "tags"
   add_foreign_key "tag_tasks", "tags"
