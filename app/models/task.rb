@@ -7,7 +7,6 @@ class Task < ApplicationRecord
   has_many :tags, through: tag_tasks
 
   has_many :comments
-  has_many :completed_tasks
   has_many :assign_cycles
 
   def add_tag(tag)

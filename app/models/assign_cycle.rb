@@ -30,4 +30,22 @@ class AssignCycle < ApplicationRecord
                   .select("accounts.*, COUNT(assign_histories.id) AS assing_count")
                   .having("assign_count < accounts.capacity * 4")
   end
+
+  def completed
+    self.deactivation
+    target = AssignHistory.joins(:assign_cycles)
+                .where(assign_cycles: { id: self.id })
+                .where(ng: false)
+    target.completed
+  end
+
+  def deactivation
+    self.is_active = false
+  end
+
+  class << self
+    def unfulfilleds
+      targets = AssignCycle.where(is_active: true)
+    end
+  end
 end
