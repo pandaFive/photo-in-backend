@@ -6,11 +6,12 @@ Rails.application.routes.draw do
     resources :tag_accounts, only: [:create, :destroy]
     resources :tags, only: [:index, :show, :create, :update, :destroy]
     resources :tasks, only: [:index, :show, :create, :update, :destroy]
-    post   "/tasks/:id/tag",       to: "tasks#add_tag"
-    delete "/tasks/:id/tag",       to: "tasks#remove_tag"
-    post   "/tasks/:id/completed", to: "tasks#completed"
-    post   "/tasks/:id/ng",        to: "tasks#ng"
-    post   "/tasks/newCycle",      to: "tasks#create_new_cycle"
+    post   "/tasks/:id/tag",            to: "tasks#add_tag"
+    delete "/tasks/:id/tag",            to: "tasks#remove_tag"
+    post   "/tasks/:id/completed",      to: "tasks#completed"
+    post   "/tasks/:id/ng",             to: "tasks#ng"
+    post   "/tasks/newCycle",           to: "tasks#create_new_cycle"
+    get    "/tasks/unfulfilled-count",  to: "tasks#unfulfilleds_count"
     resources :comments, only: [:index, :show, :create, :update, :destroy]
     resources :assigns, only: [:index, :show, :create, :update, :destroy]
     post "tasks/assign/cycle", to: "assigns#cycle_create"

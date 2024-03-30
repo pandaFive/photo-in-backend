@@ -59,10 +59,8 @@ class Api::TasksController < ApplicationController
   end
 
   def completed
-    task = Task.find(params[:task_id])
-    task.update(is_complete: true)
-
-    completed = Completed_tast.new(task_id: params[:task_id], account_id: params[:account_id])
+    cycle = assign_cycle.find(complete_params.cycle_id)
+    cycle.completed
 
     if completed.save
       render json: task
@@ -92,6 +90,11 @@ class Api::TasksController < ApplicationController
     end
   end
 
+  def unfulfilled_count
+    res = Assign_cycle.unfulfilleds
+    render json: res.count
+  end
+
   private
     def create_params
       params.require(:task).permit(:task_title)
@@ -99,5 +102,9 @@ class Api::TasksController < ApplicationController
 
     def update_params
       params.require(:task).permit(:task_title, :is_complete)
+    end
+
+    def complete_params
+      params.require(:task).permit(:cycle_id)
     end
 end
