@@ -1,10 +1,10 @@
 class Task < ApplicationRecord
   belongs_to :area
 
-  validate :name, presence: true
+  validates :task_title, presence: true
 
   has_many :tag_tasks
-  has_many :tags, through: tag_tasks
+  has_many :tags, through: :tag_tasks
 
   has_many :comments
   has_many :assign_cycles
