@@ -11,7 +11,8 @@ Rails.application.routes.draw do
     post   "/tasks/:id/completed",      to: "tasks#completed"
     post   "/tasks/:id/ng",             to: "tasks#ng"
     post   "/tasks/newCycle",           to: "tasks#create_new_cycle"
-    get    "/tasks/unfulfilled-count",  to: "tasks#unfulfilleds_count"
+    get    "/unfulfilled-count",        to: "tasks#unfulfilleds_count"
+    get    "/completed-data",           to: "tasks#get_complete_data"
     resources :comments, only: [:index, :show, :create, :update, :destroy]
     resources :assigns, only: [:index, :show, :create, :update, :destroy]
     post "tasks/assign/cycle", to: "assigns#cycle_create"

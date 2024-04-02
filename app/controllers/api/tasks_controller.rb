@@ -90,9 +90,15 @@ class Api::TasksController < ApplicationController
     end
   end
 
-  def unfulfilled_count
-    res = Assign_cycle.unfulfilleds
+  def unfulfilleds_count
+    res = AssignCycle.unfulfilleds
     render json: res.count
+  end
+
+  def get_complete_data
+    result = AssignHistory.get_completed_past_week
+
+    render json: result
   end
 
   private
