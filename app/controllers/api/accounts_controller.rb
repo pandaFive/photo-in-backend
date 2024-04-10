@@ -1,14 +1,14 @@
 class Api::AccountsController < ApplicationController
   def index
-    accounts = Account.where(role: "Photographer")
+    accounts = Account.where(role: 1)
 
-    render json: accounts
+    render json: accounts.get_role_one_status
   end
 
   def show
     account = Account.find(params[:id])
 
-    render json: account
+    render json: account.get_status
   end
 
   def create

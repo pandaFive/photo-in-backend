@@ -3,8 +3,12 @@ class AssignHistory < ApplicationRecord
   belongs_to :assign_cycle
 
   def completed
-    self.completed = true
-    self.completed_at = Time.current
+    self.update(completed: true, completed_at: Time.current)
+  end
+
+  def completed_test
+    today = Date.today
+    self.update(completed: true, completed_at: today - rand(1..7))
   end
 
   class << self

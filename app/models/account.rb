@@ -29,4 +29,41 @@ class Account < ApplicationRecord
   def remove_tag(tag)
     self.tags.destroy(tag)
   end
+
+  def get_status
+    total = AssignHistory.where(account_id: self.id)
+              .where(completed: true)
+              .count
+    week = AssignHistory.where("completed_at > ?", 1.week.ago)
+              .where(account_id: self.id)
+              .count
+    assign = AssignHistory.where(account_id: self.id)
+              .where(ng: false)
+              .where(completed: false)
+              .count
+    div = total == 0 ? 1 : total
+    ng_rate = (AssignHistory.where(account_id: self.id).where(ng: true).count / div).floor(2)
+    status = {
+      id: self.id,
+      name: self.name,
+      area: self.areas.pluck(:name).join(" "),
+      total:,
+      week:,
+      ng_rate:,
+      assign:
+    }
+    status
+  end
+
+  class << self
+    def get_role_one_status
+      res = []
+
+      Account.where(role: 1).each do |ele|
+        res.push(ele.get_status)
+      end
+
+      res
+    end
+  end
 end
