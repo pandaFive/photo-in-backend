@@ -15,7 +15,7 @@ class AssignCycle < ApplicationRecord
     current_assign = AssignHistory.new(account_id: target.id, assign_cycle_id: self.id)
 
     if current_assign.save
-      true
+      current_assign
     else
       false
     end
@@ -27,28 +27,44 @@ class AssignCycle < ApplicationRecord
     assigned = Account.left_joins(assign_histories: :assign_cycle)
                   .where(assign_cycles: { id: self.id })
 
-    accounts = Account.joins(:areas)
+    over_cap = Account.joins(:areas)
                   .left_outer_joins(assign_histories: :assign_cycle)
                   .group("accounts.id")
                   .where(areas: { id: task.area.id })
                   .where("assign_histories.ng = false OR assign_histories.ng IS NULL")
                   .where("assign_histories.completed = false OR assign_histories.completed IS NULL")
-                  .having("COUNT(assign_histories.id) < accounts.capacity * 4")
+                  .having("COUNT(assign_histories.id) >= accounts.capacity * 4")
+
+    accounts = Account.joins(:areas)
                   .where.not(id: assigned.select(:id))
+                  .where.not(id: over_cap.select(:id))
 
     accounts
   end
 
   def completed
     self.deactivation
-    target = AssignHistory.joins(:assign_cycles)
+    target = AssignHistory.joins(:assign_cycle)
                 .where(assign_cycles: { id: self.id })
                 .where(ng: false)
     target.completed
   end
 
+  def completed_test
+    self.deactivation
+    target = AssignHistory.joins(:assign_cycle)
+                .where(assign_cycles: { id: self.id })
+                .where(ng: false)
+    if target
+      history = AssignHistory.find(target.ids[0])
+      history.completed_test
+    end
+
+    target
+  end
+
   def deactivation
-    self.is_active = false
+    self.update(is_active: false)
   end
 
   class << self
