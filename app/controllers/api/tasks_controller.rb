@@ -1,6 +1,6 @@
 class Api::TasksController < ApplicationController
   def index
-    tasks = Task.all
+    tasks = Task.joins(:area).select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, tasks.created_at AS created_at")
 
     render json: tasks
   end
