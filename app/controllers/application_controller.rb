@@ -2,7 +2,7 @@ class ApplicationController < ActionController::API
   include JsonWebToken
 
   rescue_from StandardError, with: :render_standard_error
-  before_action :authenticated?
+  # before_action :authenticated?
 
   def authenticated?
     token = request.headers["Authorization"]
@@ -25,7 +25,7 @@ class ApplicationController < ActionController::API
 
     def create_render_json(account)
       token = JsonWebToken.encode({ account_id: account[:id] })
-      response = { account: { role: account[:role], token:, name: account[:name] } }
+      response = { account: { id: account[:id], role: account[:role], token:, name: account[:name] } }
       response
     end
 
