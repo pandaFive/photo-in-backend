@@ -1,8 +1,13 @@
 class Api::AccountsController < ApplicationController
+  before_action :authenticated?, only: [:get]
   def index
     accounts = Account.where(role: 1)
 
     render json: accounts.get_role_one_status
+  end
+
+  def get
+    render json: create_render_json(@current_account)
   end
 
   def show

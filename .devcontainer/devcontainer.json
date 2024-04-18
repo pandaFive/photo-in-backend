@@ -3,14 +3,14 @@
 {
 	"name": "Ruby on Rails & Postgres",
 	"dockerComposeFile": "docker-compose.yml",
-	"service": "app",
+	"service": "api",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// This can be used to network with other containers or the host.
 	"forwardPorts": [
-		3000,
+		8000,
 		5432
 	],
 	// Use 'postCreateCommand' to run commands after the container is created.
