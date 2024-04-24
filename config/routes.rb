@@ -2,7 +2,8 @@ Rails.application.routes.draw do
   namespace "api" do
     resources :accounts, only: [:index, :show, :create, :update, :destroy]
     get  "/account",                  to: "accounts#get"
-    post "/account/login",               to: "authentications#login"
+    post "/account/login",            to: "authentications#login"
+    get  "/account/tasks",            to: "tasks#get_account_task"
     resources :areas, only: [:index, :show, :create, :update, :destroy]
     resources :account_areas, only: [:create, :destroy]
     resources :tag_accounts, only: [:create, :destroy]
