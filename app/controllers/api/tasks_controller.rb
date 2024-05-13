@@ -60,13 +60,14 @@ class Api::TasksController < ApplicationController
   end
 
   def completed
-    cycle = assign_cycle.find(complete_params.cycle_id)
-    cycle.completed
+    assign_history = AssignHistory.find(params[:id])
+    assign_history.change_completed
 
-    if completed.save
-      render json: task
+    # if assign_history.completed
+    if assign_history.completed
+      render json: { message: "change compelted", result: true }
     else
-      render json: { message: task.errors, status: 422 }, status: :unprocessable_entity
+      render json: { message: "change faild", result: false }
     end
   end
 
@@ -81,7 +82,7 @@ class Api::TasksController < ApplicationController
   end
 
   def ng
-    assign_history = AssignHistory.find(params[:history_id])
+    assign_history = AssignHistory.find(params[:id])
     assign_history.update(ng: true)
     cycle = AssignCycle.find(assign_history[:assign_cycle_id])
     if cycle.assign
