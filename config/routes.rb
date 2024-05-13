@@ -11,8 +11,8 @@ Rails.application.routes.draw do
     resources :tasks, only: [:index, :show, :create, :update, :destroy]
     post   "/tasks/:id/tag",            to: "tasks#add_tag"
     delete "/tasks/:id/tag",            to: "tasks#remove_tag"
-    post   "/tasks/:id/completed",      to: "tasks#completed"
-    post   "/tasks/:id/ng",             to: "tasks#ng"
+    put    "/tasks/:id/completed",      to: "tasks#completed"
+    put    "/tasks/:id/ng",             to: "tasks#ng"
     post   "/tasks/newCycle",           to: "tasks#create_new_cycle"
     get    "/unfulfilled-count",        to: "tasks#unfulfilleds_count"
     get    "/completed-data",           to: "tasks#get_complete_data"

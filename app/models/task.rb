@@ -27,14 +27,14 @@ class Task < ApplicationRecord
     def getAccountTasks(id)
       tasks = Task.joins(:area).joins(:assign_cycles)
                 .where(assign_cycles: { id: })
-                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS aera_name, tasks.created_at AS created_at")
+                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS aera_name, assign_histories.id AS history_id, tasks.created_at AS created_at")
       tasks
     end
 
     def getAccountAssignTasks(id)
       tasks = Task.joins(:area).joins(assign_cycles: :assign_histories)
                 .where(assign_histories: { account_id: id })
-                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, tasks.created_at AS created_at")
+                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, tasks.created_at AS created_at")
       tasks
     end
   end
