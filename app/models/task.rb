@@ -34,8 +34,25 @@ class Task < ApplicationRecord
     def getAccountAssignTasks(id)
       tasks = Task.joins(:area).joins(assign_cycles: :assign_histories)
                 .where(assign_histories: { account_id: id })
-                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, tasks.created_at AS created_at")
+                .where(assign_cycles: { is_active: true })
+                .where(assign_histories: { ng: false })
+                .where(assign_histories: { completed: false })
+                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_histories.created_at AS created_at")
       tasks
+    end
+
+    def getNGTasks
+      continue_task = Task.joins(:area).joins(assign_cycles: :assign_histories)
+                .where(assign_cycles: { is_active: true })
+                .where(assign_histories: { ng: false })
+                .select(:id)
+
+      task = Task.joins(:area).joins(assign_cycles: :assign_histories)
+                .where(assign_cycles: { is_active: true })
+                .where.not(id: continue_task)
+                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_cycles.id AS cycle_id, tasks.created_at AS created_at")
+
+      task
     end
   end
 end
