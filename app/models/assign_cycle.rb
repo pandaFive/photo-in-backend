@@ -36,6 +36,7 @@ class AssignCycle < ApplicationRecord
                   .having("COUNT(assign_histories.id) >= accounts.capacity * 4")
 
     accounts = Account.joins(:areas)
+                  .where(areas: { id: task.area.id })
                   .where.not(id: assigned.select(:id))
                   .where.not(id: over_cap.select(:id))
 
