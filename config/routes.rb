@@ -20,4 +20,5 @@ Rails.application.routes.draw do
     resources :assigns, only: [:index, :show, :create, :update, :destroy]
     post "tasks/assign/cycle", to: "assigns#cycle_create"
   end
+  get "/health", to: "health#show"
 end
