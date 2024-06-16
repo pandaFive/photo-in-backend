@@ -82,6 +82,7 @@ test:
 #
 production:
   <<: *default
-  database: photo_in_backend_production
-  username: photo_in_backend
-  password: <%= ENV["PHOTO_IN_BACKEND_DATABASE_PASSWORD"] %>
+  database: <%= ENV["DATABASE"]%>
+  host: <%= ENV["DATABASE_HOST"]%>
+  username: <%= ENV["DATABASE_USER"]%>
+  password: <%= ENV["DATABASE_PASSWORD"] %>

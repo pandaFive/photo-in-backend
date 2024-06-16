@@ -1,4 +1,4 @@
-class AssignsController < ApplicationController
+class Api::AssignsController < ApplicationController
   def index
   end
 
