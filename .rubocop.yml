@@ -251,6 +251,9 @@ Lint/RedundantSafeNavigation:
 Lint/UriEscapeUnescape:
   Enabled: true
 
+Lint/UnusedMethodArgument:
+  Enabled: true
+
 Lint/UselessAssignment:
   Enabled: true
 

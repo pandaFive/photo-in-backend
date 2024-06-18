@@ -13,7 +13,7 @@ Rails.application.routes.draw do
     delete "/tasks/:id/tag",            to: "tasks#remove_tag"
     put    "/tasks/:id/completed",      to: "tasks#completed"
     put    "/tasks/:id/ng",             to: "tasks#ng"
-    post   "/tasks/newCycle",           to: "tasks#create_new_cycle"
+    post   "/tasks/:id/newCycle",       to: "tasks#create_new_cycle"
     get    "/unfulfilled-count",        to: "tasks#unfulfilleds_count"
     get    "/completed-data",           to: "tasks#get_complete_data"
     resources :comments, only: [:index, :show, :create, :update, :destroy]
