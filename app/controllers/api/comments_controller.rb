@@ -1,6 +1,6 @@
 class Api::CommentsController < ApplicationController
   def index
-    comments = Comment.where(id: params[:id])
+    comments = Comment.get_member_comments(params[:assignCycleId], params[:accountId])
 
     render json: comments
   end
@@ -12,10 +12,11 @@ class Api::CommentsController < ApplicationController
   end
 
   def create
+    puts create_params
     comment = Comment.new(create_params)
 
     if comment.save
-      render json: comment
+      render json: comment.mutate_render
     else
       render json: { message: comment.errors, status: 422 }, status: :unprocessable_entity
     end
@@ -36,6 +37,10 @@ class Api::CommentsController < ApplicationController
 
   private
     def create_params
-      params.require(:comment).permit(:content, :task_id, :account_id)
+      params.require(:comment).permit(:content, :assign_cycle_id, :account_id)
+    end
+
+    def update_params
+      params.require(:comment).permit(:content, :assign_cycle_id, :account_id)
     end
 end

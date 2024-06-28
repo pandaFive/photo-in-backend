@@ -4,7 +4,8 @@ class Api::TasksController < ApplicationController
     type = params[:type]
 
     if type == "all"
-      tasks = account ? Task.getAccountAssignTasks(account.id) : Task.joins(:area).select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, tasks.created_at AS created_at")
+
+      tasks = Task.getActiveTasks
 
       render json: tasks
     elsif type == "ng"

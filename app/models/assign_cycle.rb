@@ -2,6 +2,8 @@ class AssignCycle < ApplicationRecord
   belongs_to :task
 
   has_many :assign_histories
+  has_many :comments
+
 
   def assign
     accounts = get_assignable

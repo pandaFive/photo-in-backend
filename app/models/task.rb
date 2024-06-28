@@ -6,7 +6,6 @@ class Task < ApplicationRecord
   has_many :tag_tasks
   has_many :tags, through: :tag_tasks
 
-  has_many :comments
   has_many :assign_cycles
   has_many :assign_histories, through: :assign_cycles
 
@@ -36,7 +35,14 @@ class Task < ApplicationRecord
                 .where(assign_cycles: { is_active: true })
                 .where(assign_histories: { ng: false })
                 .where(assign_histories: { completed: false })
-                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_histories.created_at AS created_at")
+                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, assign_histories.created_at AS created_at")
+      tasks
+    end
+
+    def getActiveTasks
+      tasks = Task.joins(:area).joins(assign_cycles: :assign_histories)
+                .where(assign_cycles: { is_active: true })
+                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
       tasks
     end
 
