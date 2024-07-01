@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_06_25_200204) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_01_031729) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -66,9 +66,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_06_25_200204) do
     t.string "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "assign_cycle_id", null: false
+    t.bigint "task_id", null: false
     t.index ["account_id"], name: "index_comments_on_account_id"
-    t.index ["assign_cycle_id"], name: "index_comments_on_assign_cycle_id"
+    t.index ["task_id"], name: "index_comments_on_task_id"
   end
 
   create_table "tag_accounts", force: :cascade do |t|

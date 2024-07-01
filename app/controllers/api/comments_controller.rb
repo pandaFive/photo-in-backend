@@ -1,6 +1,6 @@
 class Api::CommentsController < ApplicationController
   def index
-    comments = Comment.get_member_comments(params[:assignCycleId], params[:accountId])
+    comments = Comment.get_member_comments(params[:taskId], params[:accountId])
 
     render json: comments
   end
@@ -12,8 +12,8 @@ class Api::CommentsController < ApplicationController
   end
 
   def create
-    puts create_params
     comment = Comment.new(create_params)
+    puts comment
 
     if comment.save
       render json: comment.mutate_render[0]
@@ -41,10 +41,10 @@ class Api::CommentsController < ApplicationController
 
   private
     def create_params
-      params.require(:comment).permit(:content, :assign_cycle_id, :account_id)
+      params.require(:comment).permit(:content, :task_id, :account_id)
     end
 
     def update_params
-      params.require(:comment).permit(:content, :assign_cycle_id, :account_id)
+      params.require(:comment).permit(:content, :task_id, :account_id)
     end
 end
