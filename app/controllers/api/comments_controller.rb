@@ -16,7 +16,7 @@ class Api::CommentsController < ApplicationController
     comment = Comment.new(create_params)
 
     if comment.save
-      render json: comment.mutate_render
+      render json: comment.mutate_render[0]
     else
       render json: { message: comment.errors, status: 422 }, status: :unprocessable_entity
     end
@@ -32,7 +32,11 @@ class Api::CommentsController < ApplicationController
   def destroy
     comment = Comment.find(params[:id])
 
-    comment.destroy
+    if comment.destroy
+      render json: { message: "complete" }, status: 200
+    else
+      render json: { message: "Delete failed" }, status: 400
+    end
   end
 
   private

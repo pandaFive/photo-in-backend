@@ -12,12 +12,20 @@ class Comment < ApplicationRecord
 
   class << self
     def get_member_comments(cycle_id, account_id)
-      comments = Comment.joins(:account)
-                    .where(assign_cycle_id: cycle_id)
-                    .where(account_id:)
-                    .select("comments.id AS id, comments.content AS content, comments.updated_at AS updatedAt, accounts.name AS accountName, comments.assign_cycle_id AS cycleId, accounts.role AS role")
+      account = Account.find(account_id)
 
-      comments
+      if account.role == "admin"
+        comments = Comment.joins(:account)
+                      .where(assign_cycle_id: cycle_id)
+                      .select("comments.id AS id, comments.content AS content, comments.updated_at AS updatedAt, accounts.name AS name, comments.assign_cycle_id AS cycleId, accounts.role AS role")
+        comments
+      else
+        comments = Comment.joins(:account)
+                      .where(assign_cycle_id: cycle_id)
+                      .where(account_id:)
+                      .select("comments.id AS id, comments.content AS content, comments.updated_at AS updatedAt, accounts.name AS name, comments.assign_cycle_id AS cycleId, accounts.role AS role")
+        comments
+      end
     end
   end
 end

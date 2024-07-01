@@ -1,6 +1,5 @@
 class Api::TasksController < ApplicationController
   def index
-    account = params[:id]
     type = params[:type]
 
     if type == "all"

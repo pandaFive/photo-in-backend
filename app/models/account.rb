@@ -59,7 +59,7 @@ class Account < ApplicationRecord
     def get_role_one_status
       res = []
 
-      Account.where(role: 1).each do |ele|
+      Account.where(role: "member").each do |ele|
         res.push(ele.get_status)
       end
 
