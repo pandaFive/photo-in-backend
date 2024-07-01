@@ -2,11 +2,11 @@
   Area.create(name: ele)
 end
 
-Account.create(name: "管理者", password: "password", role: 0, capacity: 0)
+Account.create(name: "管理者", password: "password", role: "admin", capacity: 0)
 
 ["加藤", "佐藤", "鈴木"].each_with_index do |man, index|
   c = index * 2
-  a = Account.create(name: man, password: "password", role: 1, capacity: c**3)
+  a = Account.create(name: man, password: "password", role: "member", capacity: c**3)
   a.add_area(Area.find(index + 1))
 end
 
