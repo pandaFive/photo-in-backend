@@ -40,9 +40,14 @@ class Task < ApplicationRecord
     end
 
     def getActiveTasks
-      tasks = Task.joins(:area).joins(assign_cycles: :assign_histories)
+      # tasks = Task.joins(:area).joins(assign_cycles: :assign_histories)
+      #           .where(assign_cycles: { is_active: true })
+      #           .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
+
+      tasks = Task.joins(:area).joins(:assign_cycles)
                 .where(assign_cycles: { is_active: true })
-                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
+                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
+
       tasks
     end
 
