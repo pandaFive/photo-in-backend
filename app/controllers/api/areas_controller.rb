@@ -1,6 +1,6 @@
 class Api::AreasController < ApplicationController
   def index
-    areas = Area.all
+    areas = Area.get_all_area
 
     render json: areas
   end

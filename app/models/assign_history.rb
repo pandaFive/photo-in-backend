@@ -20,6 +20,7 @@ class AssignHistory < ApplicationRecord
       completed_count = AssignHistory.where("completed_at > ?", 1.week.ago)
                             .group_by { |assign_histories| assign_histories.completed_at.to_date }
                             .transform_values(&:count)
+                            .transform_keys { |date| date.strftime("%-m月%-d日") }
       completed_count
     end
   end
