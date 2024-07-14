@@ -51,12 +51,12 @@ RSpec.describe Api::TasksController, type: :controller do
         @member.add_areas([@area.id])
       end
       it "Status 200が返ってくること" do
-        post :create, params: { task: { task_title: "テスト登録" } }
+        post :create, params: { task: { task_title: "x テスト登録" } }
         expect(response).to have_http_status(200)
       end
       it "正しいデータが返ってくること" do
-        post :create, params: { task: { task_title: "テスト登録" } }
-        expect(JSON.parse(response.body)["task_title"]).to eq("テスト登録")
+        post :create, params: { task: { task_title: "x テスト登録" } }
+        expect(JSON.parse(response.body)["task_title"]).to eq("x テスト登録")
       end
     end
     context "タスクタイトルが指定されなかった場合" do
