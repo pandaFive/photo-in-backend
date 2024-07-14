@@ -31,10 +31,11 @@ class Api::TasksController < ApplicationController
       if cycle.assign
         render json: task
       else
-        render json: { status: 422 }
+        render json: { status: 422 }, status: 422
       end
     else
-      render json: { message: task.errors, status: 422 }, status: :unprocessable_entity
+      puts "check ha?"
+      render json: { message: task.errors.full_messages, status: 422 }, status: :unprocessable_entity
     end
   end
 

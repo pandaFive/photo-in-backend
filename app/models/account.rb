@@ -19,8 +19,6 @@ class Account < ApplicationRecord
   end
 
   def add_areas(areas)
-    puts "check"
-    puts areas
     areas.each do |area|
       add_area(Area.find(area.to_i))
     end
@@ -58,7 +56,6 @@ class Account < ApplicationRecord
       createdAt: self.created_at,
       updatedAt: self.updated_at,
       name: self.name,
-      # area: self.areas.pluck(:name).join(" "),
       area: self.areas.pluck(:name),
       total:,
       week:,
