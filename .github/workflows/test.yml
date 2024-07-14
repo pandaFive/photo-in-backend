@@ -44,6 +44,7 @@ jobs:
           ruby-version: 3.3.0
       - name: Bundler and gem install
         run: |
+          ls
           bundle install
       - name: Run rubocop
         run: bundle exec rubocop
