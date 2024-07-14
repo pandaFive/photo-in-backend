@@ -25,7 +25,6 @@ jobs:
 
       - name: Bundler and gem install
         run: |
-          gem install bundler
           bundle install
       - name: Database create and migrate
         env:
@@ -45,7 +44,6 @@ jobs:
           ruby-version: 3.3.0
       - name: Bundler and gem install
         run: |
-          gem install bundler
           bundle install
       - name: Run rubocop
         run: bundle exec rubocop
