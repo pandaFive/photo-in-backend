@@ -18,6 +18,12 @@ class Account < ApplicationRecord
     self.areas << area
   end
 
+  def add_areas(areas)
+    areas.each do |area|
+      add_area(Area.find(area.to_i))
+    end
+  end
+
   def remove_area(area)
     self.areas.destroy(area)
   end
@@ -42,11 +48,15 @@ class Account < ApplicationRecord
               .where(completed: false)
               .count
     div = total == 0 ? 1 : total
-    ng_rate = (AssignHistory.where(account_id: self.id).where(ng: true).count / div).floor(2)
+    ng = AssignHistory.where(account_id: self.id).where(ng: true).count
+    ng_rate = (1.0 * ng / div).floor(2)
     status = {
       id: self.id,
+      capacity: self.capacity,
+      createdAt: self.created_at,
+      updatedAt: self.updated_at,
       name: self.name,
-      area: self.areas.pluck(:name).join(" "),
+      area: self.areas.pluck(:name),
       total:,
       week:,
       ng_rate:,
@@ -59,7 +69,7 @@ class Account < ApplicationRecord
     def get_role_one_status
       res = []
 
-      Account.where(role: 1).each do |ele|
+      Account.where(role: "member").each do |ele|
         res.push(ele.get_status)
       end
 

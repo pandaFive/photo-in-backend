@@ -2,6 +2,8 @@ class AssignCycle < ApplicationRecord
   belongs_to :task
 
   has_many :assign_histories
+  has_many :comments
+
 
   def assign
     accounts = get_assignable
@@ -24,9 +26,11 @@ class AssignCycle < ApplicationRecord
   def get_assignable
     task = self.try(:task)
 
+    # 既にこのcycleでにNGがついているAccountを取得
     assigned = Account.left_joins(assign_histories: :assign_cycle)
                   .where(assign_cycles: { id: self.id })
 
+    # アサインされているタスク数がキャパシティの4倍以上になっているAccountを取得する
     over_cap = Account.joins(:areas)
                   .left_outer_joins(assign_histories: :assign_cycle)
                   .group("accounts.id")
@@ -35,6 +39,7 @@ class AssignCycle < ApplicationRecord
                   .where("assign_histories.completed = false OR assign_histories.completed IS NULL")
                   .having("COUNT(assign_histories.id) >= accounts.capacity * 4")
 
+    # エリア合致、未アサイン、キャパ範囲内、の3つの条件を満たす最初のAccountにアサイン
     accounts = Account.joins(:areas)
                   .where(areas: { id: task.area.id })
                   .where.not(id: assigned.select(:id))

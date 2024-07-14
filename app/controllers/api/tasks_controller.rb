@@ -1,10 +1,10 @@
 class Api::TasksController < ApplicationController
   def index
-    account = params[:id]
     type = params[:type]
 
     if type == "all"
-      tasks = account ? Task.getAccountTasks(account) : Task.joins(:area).select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, tasks.created_at AS created_at")
+
+      tasks = Task.getActiveTasks
 
       render json: tasks
     elsif type == "ng"
@@ -24,17 +24,22 @@ class Api::TasksController < ApplicationController
 
   def create
     task = Task.new(create_params)
-    task.area_id = 1
+    id = Area.getAreaId(create_params[:task_title])
 
-    if task.save
-      cycle = task.create_new_cycle
-      if cycle.assign
-        render json: task
-      else
-        render json: { status: 422 }
-      end
+    if id == nil
+      render json: { message: "エリアが正しく設定されていない" }, status: 400
     else
-      render json: { message: task.errors, status: 422 }, status: :unprocessable_entity
+      task.area_id = id
+      if task.save
+        cycle = task.create_new_cycle
+        if cycle.assign
+          render json: task
+        else
+          render json: { status: 422 }, status: 422
+        end
+      else
+        render json: { message: task.errors.full_messages, status: 422 }, status: :unprocessable_entity
+      end
     end
   end
 
@@ -82,7 +87,7 @@ class Api::TasksController < ApplicationController
   end
 
   def create_new_cycle
-    task = Task.find(params[:task_id])
+    task = Task.find(params[:id])
     cycle = task.create_new_cycle
     if cycle.assign
       render json: task

@@ -43,7 +43,7 @@ group :development, :test do
   gem "debug", platforms: %i[ mri windows ]
 end
 
-group :development do
+group :development, :test do
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
   gem "solargraph"
@@ -53,13 +53,13 @@ group :development do
   gem "rubocop-performance", require: false
   gem "rubocop-packaging",   require: false
   gem "rubocop-md",          require: false
+  gem "rspec-rails"
+  gem "factory_bot_rails"
 end
 
 group :test do
-  gem "minitest"
-  gem "minitest-reporters"
+  gem "rspec-rails"
   gem "guard"
-  gem "guard-minitest"
   gem "simplecov",               require: false
   gem "rails-controller-testing"
 end

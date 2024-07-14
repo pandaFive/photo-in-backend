@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_03_30_172915) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_01_031729) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -62,11 +62,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_30_172915) do
   end
 
   create_table "comments", force: :cascade do |t|
-    t.bigint "task_id", null: false
     t.bigint "account_id", null: false
     t.string "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "task_id", null: false
     t.index ["account_id"], name: "index_comments_on_account_id"
     t.index ["task_id"], name: "index_comments_on_task_id"
   end
@@ -109,7 +109,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_30_172915) do
   add_foreign_key "assign_histories", "accounts"
   add_foreign_key "assign_histories", "assign_cycles"
   add_foreign_key "comments", "accounts"
-  add_foreign_key "comments", "tasks"
   add_foreign_key "tag_accounts", "accounts"
   add_foreign_key "tag_accounts", "tags"
   add_foreign_key "tag_tasks", "tags"
