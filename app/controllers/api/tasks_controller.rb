@@ -24,18 +24,22 @@ class Api::TasksController < ApplicationController
 
   def create
     task = Task.new(create_params)
-    task.area_id = 1
+    id = Area.getAreaId(create_params[:task_title])
 
-    if task.save
-      cycle = task.create_new_cycle
-      if cycle.assign
-        render json: task
-      else
-        render json: { status: 422 }, status: 422
-      end
+    if id == nil
+      render json: { message: "エリアが正しく設定されていない" }, status: 400
     else
-      puts "check ha?"
-      render json: { message: task.errors.full_messages, status: 422 }, status: :unprocessable_entity
+      task.area_id = id
+      if task.save
+        cycle = task.create_new_cycle
+        if cycle.assign
+          render json: task
+        else
+          render json: { status: 422 }, status: 422
+        end
+      else
+        render json: { message: task.errors.full_messages, status: 422 }, status: :unprocessable_entity
+      end
     end
   end
 
