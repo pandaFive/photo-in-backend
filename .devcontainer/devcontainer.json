@@ -30,7 +30,9 @@
 				"oderwat.indent-rainbow",
 				"VisualStudioExptTeam.vscodeintellicode",
 				"shardulm94.trailing-spaces",
-				"bung87.rails"
+				"bung87.rails",
+				"eamodio.gitlens",
+				"github.vscode-github-actions"
 			]
 		}
 	}
