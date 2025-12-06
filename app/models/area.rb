@@ -6,22 +6,18 @@ class Area < ApplicationRecord
 
   class << self
     def get_all_area
-      res = Area.select(:id, :name)
-      res
+      Area.select(:id, :name)
     end
 
-    def getAreaId(title)
+    def get_area_id(title)
       area_names = Area.all.pluck(:name)
       area_name = area_names.select do |area|
         title.include? area
       end
 
-      if area_name.empty?
-        nil
-      else
-        id = Area.find_by(name: area_name[0]).id
-        id
-      end
+      return nil if area_name.empty?
+
+      Area.find_by(name: area_name[0]).id
     end
   end
 end

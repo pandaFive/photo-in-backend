@@ -29,54 +29,33 @@ class Task < ApplicationRecord
 
   class << self
     # idのAccountに現在アサインされているタスクを取得する
-    def getAccountAssignTasks(id)
-      tasks = Task.joins(:area).joins(assign_cycles: :assign_histories)
-                .where(assign_histories: { account_id: id })
-                .where(assign_cycles: { is_active: true })
-                .where(assign_histories: { ng: false })
-                .where(assign_histories: { completed: false })
-                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, assign_histories.created_at AS created_at")
-      tasks
+    def get_account_assign_tasks(id)
+      Task.joins(:area).joins(assign_cycles: :assign_histories)
+          .where(assign_histories: { account_id: id })
+          .where(assign_cycles: { is_active: true })
+          .where(assign_histories: { ng: false })
+          .where(assign_histories: { completed: false })
+          .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, assign_histories.created_at AS created_at")
     end
 
-    def getActiveTasks
-      # tasks = Task.joins(:area).joins(assign_cycles: :assign_histories)
-      #           .where(assign_cycles: { is_active: true })
-      #           .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
-
-      tasks = Task.joins(:area).joins(:assign_cycles)
-                .where(assign_cycles: { is_active: true })
-                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
-
-      tasks
+    def get_active_tasks
+      Task.joins(:area).joins(:assign_cycles)
+          .where(assign_cycles: { is_active: true })
+          .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
     end
 
-    def getNGTasks
+    def get_ng_tasks
       # 実行中のタスクを取得する
       continue_task = Task.joins(:area).joins(assign_cycles: :assign_histories)
-                .where(assign_cycles: { is_active: true })
-                .where(assign_histories: { ng: false })
-                .select(:id)
+                          .where(assign_cycles: { is_active: true })
+                          .where(assign_histories: { ng: false })
+                          .select(:id)
 
       # 一つ以上のNGがあり現在実行中にないタスクを取得する
-      task = Task.joins(:area).joins(assign_cycles: :assign_histories)
-                .where(assign_cycles: { is_active: true })
-                .where.not(id: continue_task)
-                .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
-
-      task
-    end
-
-    def getAreaId(title)
-      area_names = Area.all.pluck(:name)
-      area_name = area_names.select do |area|
-        title.include? area
-      end
-      if area_name.length == 0
-        return nil
-      end
-      id = Area.find_by(name: area_name[0]).id
-      id
+      Task.joins(:area).joins(assign_cycles: :assign_histories)
+          .where(assign_cycles: { is_active: true })
+          .where.not(id: continue_task)
+          .select("tasks.id AS id, tasks.task_title AS title, areas.name AS area_name, assign_histories.id AS history_id, assign_cycles.id AS assign_cycle_id, tasks.created_at AS created_at")
     end
   end
 end

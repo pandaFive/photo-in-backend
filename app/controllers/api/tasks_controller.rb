@@ -3,13 +3,10 @@ class Api::TasksController < ApplicationController
     type = params[:type]
 
     if type == "all"
-
-      tasks = Task.getActiveTasks
-
+      tasks = Task.get_active_tasks
       render json: tasks
     elsif type == "ng"
-      tasks = Task.getNGTasks
-
+      tasks = Task.get_ng_tasks
       render json: tasks
     else
       render json: { message: "not type" }
@@ -24,9 +21,9 @@ class Api::TasksController < ApplicationController
 
   def create
     task = Task.new(create_params)
-    id = Area.getAreaId(create_params[:task_title])
+    id = Area.get_area_id(create_params[:task_title])
 
-    if id == nil
+    if id.nil?
       render json: { message: "エリアが正しく設定されていない" }, status: 400
     else
       task.area_id = id
@@ -120,7 +117,7 @@ class Api::TasksController < ApplicationController
 
   def get_account_task
     id = params[:id]
-    tasks = Task.getAccountAssignTasks(id)
+    tasks = Task.get_account_assign_tasks(id)
     render json: tasks
   end
 

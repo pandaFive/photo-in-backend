@@ -38,17 +38,17 @@ RSpec.describe Area, type: :model do
     end
   end
 
-  describe ".getAreaId" do
+  describe ".get_area_id" do
     it "タイトルに含まれるエリア名からエリアIDを取得できること" do
       area = create(:area, name: "テストエリア")
 
-      area_id = Area.getAreaId("テストエリアのタスク")
+      area_id = Area.get_area_id("テストエリアのタスク")
 
       expect(area_id).to eq(area.id)
     end
 
     it "エリア名が含まれていない場合はnilを返すこと" do
-      area_id = Area.getAreaId("存在しないエリアのタスク")
+      area_id = Area.get_area_id("存在しないエリアのタスク")
 
       expect(area_id).to be_nil
     end
@@ -57,7 +57,7 @@ RSpec.describe Area, type: :model do
       area1 = create(:area, name: "エリアA")
       area2 = create(:area, name: "エリアB")
 
-      area_id = Area.getAreaId("エリアAとエリアBのタスク")
+      area_id = Area.get_area_id("エリアAとエリアBのタスク")
 
       expect([area1.id, area2.id]).to include(area_id)
     end

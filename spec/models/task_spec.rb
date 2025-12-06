@@ -84,7 +84,7 @@ RSpec.describe Task, type: :model do
     end
   end
 
-  describe ".getAccountAssignTasks" do
+  describe ".get_account_assign_tasks" do
     it "アカウントにアサインされている未完了のタスクを取得できること" do
       area = create(:area)
       task = create(:task, area_id: area.id)
@@ -92,7 +92,7 @@ RSpec.describe Task, type: :model do
       cycle = create(:assign_cycle, task_id: task.id, is_active: true)
       history = create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: false, completed: false)
 
-      tasks = Task.getAccountAssignTasks(account.id)
+      tasks = Task.get_account_assign_tasks(account.id)
 
       expect(tasks.count).to eq(1)
       expect(tasks.first.id).to eq(task.id)
@@ -105,7 +105,7 @@ RSpec.describe Task, type: :model do
       cycle = create(:assign_cycle, task_id: task.id, is_active: true)
       history = create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: false, completed: true)
 
-      tasks = Task.getAccountAssignTasks(account.id)
+      tasks = Task.get_account_assign_tasks(account.id)
 
       expect(tasks.count).to eq(0)
     end
@@ -117,19 +117,19 @@ RSpec.describe Task, type: :model do
       cycle = create(:assign_cycle, task_id: task.id, is_active: true)
       history = create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: true, completed: false)
 
-      tasks = Task.getAccountAssignTasks(account.id)
+      tasks = Task.get_account_assign_tasks(account.id)
 
       expect(tasks.count).to eq(0)
     end
   end
 
-  describe ".getActiveTasks" do
+  describe ".get_active_tasks" do
     it "アクティブなタスクを取得できること" do
       area = create(:area)
       task = create(:task, area_id: area.id)
       cycle = create(:assign_cycle, task_id: task.id, is_active: true)
 
-      tasks = Task.getActiveTasks
+      tasks = Task.get_active_tasks
 
       expect(tasks.count).to eq(1)
       expect(tasks.first.id).to eq(task.id)
@@ -140,25 +140,9 @@ RSpec.describe Task, type: :model do
       task = create(:task, area_id: area.id)
       cycle = create(:assign_cycle, task_id: task.id, is_active: false)
 
-      tasks = Task.getActiveTasks
+      tasks = Task.get_active_tasks
 
       expect(tasks.count).to eq(0)
-    end
-  end
-
-  describe ".getAreaId" do
-    it "タイトルに含まれるエリア名からエリアIDを取得できること" do
-      area = create(:area, name: "テストエリア")
-
-      area_id = Task.getAreaId("テストエリアのタスク")
-
-      expect(area_id).to eq(area.id)
-    end
-
-    it "エリア名が含まれていない場合はnilを返すこと" do
-      area_id = Task.getAreaId("存在しないエリアのタスク")
-
-      expect(area_id).to be_nil
     end
   end
 end
