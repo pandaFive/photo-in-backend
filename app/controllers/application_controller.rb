@@ -1,6 +1,8 @@
 class ApplicationController < ActionController::API
   include JsonWebToken
 
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+  rescue_from ActionController::ParameterMissing, with: :render_bad_request
   rescue_from StandardError, with: :render_standard_error
   # before_action :authenticated?
 
@@ -23,6 +25,16 @@ class ApplicationController < ActionController::API
   private
     def render_unauthorized
       render json: { error: "unauthorized", status: 401 }, status: :unauthorized
+    end
+
+    def render_not_found(error)
+      Rails.logger.warn "Record not found: #{error.message}"
+      render json: { error: "Resource not found", status: 404 }, status: :not_found
+    end
+
+    def render_bad_request(error)
+      Rails.logger.warn "Parameter missing: #{error.message}"
+      render json: { error: "Bad request", message: error.message, status: 400 }, status: :bad_request
     end
 
     def create_render_json(account)
