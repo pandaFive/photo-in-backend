@@ -68,7 +68,6 @@ class Task < ApplicationRecord
     end
 
     def getAreaId(title)
-      puts "check"
       area_names = Area.all.pluck(:name)
       area_name = area_names.select do |area|
         title.include? area

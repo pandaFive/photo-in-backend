@@ -13,7 +13,6 @@ class Api::CommentsController < ApplicationController
 
   def create
     comment = Comment.new(create_params)
-    puts comment
 
     if comment.save
       render json: comment.mutate_render[0]
