@@ -68,9 +68,47 @@ RSpec.describe Api::TasksController, type: :controller do
   end
   describe "PUT #update" do
     before do
-      @task = create(:task)
+      @area = create(:area)
+      @task = create(:task, area_id: @area.id, task_title: "元のタイトル")
     end
     context "更新が成功した場合" do
+      it "Status 200が返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "更新されたタイトル" } }
+        expect(response).to have_http_status(200)
+      end
+
+      it "更新されたデータが返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "更新されたタイトル" } }
+        expect(JSON.parse(response.body)["task_title"]).to eq("更新されたタイトル")
+      end
+    end
+
+    context "存在しないtaskのidが指定された場合" do
+      it "Status 500が返ってくること" do
+        put :update, params: { id: 9999, task: { task_title: "更新" } }
+        expect(response).to have_http_status(500)
+      end
+    end
+  end
+
+  describe "DELETE #destroy" do
+    before do
+      @area = create(:area)
+      @task = create(:task, area_id: @area.id)
+    end
+
+    context "削除が成功した場合" do
+      it "Status 200が返ってくること" do
+        delete :destroy, params: { id: @task.id }
+        expect(response).to have_http_status(200)
+      end
+    end
+
+    context "存在しないtaskのidが指定された場合" do
+      it "Status 500が返ってくること" do
+        delete :destroy, params: { id: 9999 }
+        expect(response).to have_http_status(500)
+      end
     end
   end
 end
