@@ -13,6 +13,8 @@ class ApplicationController < ActionController::API
       @current_account = Account.find(@decoded["account_id"])
     rescue ActiveRecord::RecordNotFound
       render_unauthorized
+    rescue JWT::ExpiredSignature
+      render json: { error: "Token has expired", status: 401 }, status: :unauthorized
     rescue JWT::DecodeError
       render_unauthorized
     end
@@ -30,6 +32,11 @@ class ApplicationController < ActionController::API
     end
 
     def render_standard_error(error)
-      render json: { error: error.message, location: error.backtrace }, status: :internal_server_error
+      # ログにはエラー詳細を記録
+      Rails.logger.error "#{error.class}: #{error.message}"
+      Rails.logger.error error.backtrace.join("\n")
+
+      # クライアントには詳細を送らない
+      render json: { error: "Internal server error" }, status: :internal_server_error
     end
 end
