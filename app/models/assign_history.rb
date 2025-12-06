@@ -10,11 +10,6 @@ class AssignHistory < ApplicationRecord
     end
   end
 
-  def completed_test
-    today = Date.today
-    self.update(completed: true, completed_at: today - rand(1..7))
-  end
-
   class << self
     def get_completed_past_week
       completed_count = AssignHistory.where("completed_at > ?", 1.week.ago)

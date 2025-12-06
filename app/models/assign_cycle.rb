@@ -56,19 +56,6 @@ class AssignCycle < ApplicationRecord
     target.completed
   end
 
-  def completed_test
-    self.deactivation
-    target = AssignHistory.joins(:assign_cycle)
-                .where(assign_cycles: { id: self.id })
-                .where(ng: false)
-    if target
-      history = AssignHistory.find(target.ids[0])
-      history.completed_test
-    end
-
-    target
-  end
-
   def deactivation
     self.update(is_active: false)
   end
