@@ -47,10 +47,12 @@ class Account < ApplicationRecord
               .where(ng: false)
               .where(completed: false)
               .count
-    div = total == 0 ? 1 : total
     ng = AssignHistory.where(account_id: self.id).where(ng: true).count
-    ng_rate = (1.0 * ng / div).floor(2)
-    status = {
+
+    # ゼロ除算を避けるため、totalが0の場合はng_rateを0.0に設定
+    ng_rate = total.zero? ? 0.0 : (ng.to_f / total).floor(2)
+
+    {
       id: self.id,
       capacity: self.capacity,
       createdAt: self.created_at,
@@ -62,7 +64,6 @@ class Account < ApplicationRecord
       ng_rate:,
       assign:
     }
-    status
   end
 
   class << self
