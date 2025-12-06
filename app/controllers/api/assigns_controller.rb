@@ -1,6 +1,6 @@
 class Api::AssignsController < ApplicationController
-  def index
-  end
+  # TODO: indexメソッドの実装が必要な場合は追加してください
+  # 現在はcycle_createのみが使用されています
 
   def cycle_create
     cycle = AssignCycle.new(cycle_params)
