@@ -9,7 +9,7 @@ class Api::AccountAreasController < ApplicationController
   end
 
   def destroy
-    account = Accout.find(params[:account_id])
+    account = Account.find(params[:account_id])
     area = Area.find(params[:area_id])
 
     account.remove_area(area)

@@ -44,16 +44,16 @@ class Api::TasksController < ApplicationController
   end
 
   def update
-    tag = Tag.find(params[:id])
-    tag.update(update_params)
+    task = Task.find(params[:id])
+    task.update(update_params)
 
-    render json: tag
+    render json: task
   end
 
   def destroy
-    tag = Tag.find(params[:id])
+    task = Task.find(params[:id])
 
-    tag.destroy
+    task.destroy
   end
 
   def add_tag
@@ -80,9 +80,9 @@ class Api::TasksController < ApplicationController
 
     # if assign_history.completed
     if assign_history.completed
-      render json: { message: "change compelted", result: true }
+      render json: { message: "change completed", result: true }
     else
-      render json: { message: "change faild", result: false }
+      render json: { message: "change failed", result: false }
     end
   end
 

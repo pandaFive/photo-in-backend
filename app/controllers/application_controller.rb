@@ -12,15 +12,15 @@ class ApplicationController < ActionController::API
       @decoded = JsonWebToken.decode(token)
       @current_account = Account.find(@decoded["account_id"])
     rescue ActiveRecord::RecordNotFound
-      render_unuthorized
+      render_unauthorized
     rescue JWT::DecodeError
-      render_unuthorized
+      render_unauthorized
     end
   end
 
   private
-    def render_unuthorized
-      render json: { error: "unuthorized", status: 401 }, status: :unuthorized
+    def render_unauthorized
+      render json: { error: "unauthorized", status: 401 }, status: :unauthorized
     end
 
     def create_render_json(account)
