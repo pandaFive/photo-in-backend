@@ -12,6 +12,7 @@ AllCops:
   DisabledByDefault: true
   SuggestExtensions: false
   Exclude:
+    - 'README.md'
     - '**/tmp/**/*'
     - '**/templates/**/*'
     - '**/vendor/**/*'
