@@ -18,13 +18,10 @@ class Task < ApplicationRecord
   end
 
   def create_new_cycle
-    # すでにcycleが存在している場合非アクティブ化
-    AssignCycle.where(task_id: self.id).each do |cycle|
-      cycle.deactivation
-    end
+    # すでにcycleが存在している場合、一括で非アクティブ化
+    AssignCycle.where(task_id: id).update_all(is_active: false)
 
-    cycle = self.assign_cycles.create
-    cycle
+    assign_cycles.create
   end
 
   class << self

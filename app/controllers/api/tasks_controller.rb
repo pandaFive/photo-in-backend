@@ -20,23 +20,12 @@ class Api::TasksController < ApplicationController
   end
 
   def create
-    task = Task.new(create_params)
-    id = Area.get_area_id(create_params[:task_title])
+    result = TaskCreationService.new(task_title: create_params[:task_title]).call
 
-    if id.nil?
-      render json: { message: "エリアが正しく設定されていない" }, status: 400
+    if result.success?
+      render json: result.task
     else
-      task.area_id = id
-      if task.save
-        cycle = task.create_new_cycle
-        if cycle.assign
-          render json: task
-        else
-          render json: { status: 422 }, status: 422
-        end
-      else
-        render json: { message: task.errors.full_messages, status: 422 }, status: :unprocessable_entity
-      end
+      render json: { message: result.error_message, status: 422 }, status: result.error_status
     end
   end
 
