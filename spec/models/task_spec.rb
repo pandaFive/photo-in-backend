@@ -36,7 +36,7 @@ RSpec.describe Task, type: :model do
     it "タスクにタグを追加できること" do
       area = create(:area)
       task = create(:task, area_id: area.id)
-      tag = Tag.create(tag_name: "Test Tag")
+      tag = Tag.create(name: "Test Tag")
 
       expect { task.add_tag(tag) }.to change { task.tags.count }.by(1)
       expect(task.tags).to include(tag)
@@ -47,7 +47,7 @@ RSpec.describe Task, type: :model do
     it "タスクからタグを削除できること" do
       area = create(:area)
       task = create(:task, area_id: area.id)
-      tag = Tag.create(tag_name: "Test Tag")
+      tag = Tag.create(name: "Test Tag")
       task.add_tag(tag)
 
       expect { task.remove_tag(tag) }.to change { task.tags.count }.by(-1)
@@ -90,11 +90,11 @@ RSpec.describe Task, type: :model do
       task = create(:task, area_id: area.id)
       account = create(:account_member)
       cycle = create(:assign_cycle, task_id: task.id, is_active: true)
-      history = create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: false, completed: false)
+      create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: false, completed: false)
 
       tasks = Task.get_account_assign_tasks(account.id)
 
-      expect(tasks.count).to eq(1)
+      expect(tasks.length).to eq(1)
       expect(tasks.first.id).to eq(task.id)
     end
 
@@ -103,11 +103,11 @@ RSpec.describe Task, type: :model do
       task = create(:task, area_id: area.id)
       account = create(:account_member)
       cycle = create(:assign_cycle, task_id: task.id, is_active: true)
-      history = create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: false, completed: true)
+      create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: false, completed: true)
 
       tasks = Task.get_account_assign_tasks(account.id)
 
-      expect(tasks.count).to eq(0)
+      expect(tasks.length).to eq(0)
     end
 
     it "NGのタスクは取得しないこと" do
@@ -115,11 +115,11 @@ RSpec.describe Task, type: :model do
       task = create(:task, area_id: area.id)
       account = create(:account_member)
       cycle = create(:assign_cycle, task_id: task.id, is_active: true)
-      history = create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: true, completed: false)
+      create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: true, completed: false)
 
       tasks = Task.get_account_assign_tasks(account.id)
 
-      expect(tasks.count).to eq(0)
+      expect(tasks.length).to eq(0)
     end
   end
 
@@ -127,22 +127,22 @@ RSpec.describe Task, type: :model do
     it "アクティブなタスクを取得できること" do
       area = create(:area)
       task = create(:task, area_id: area.id)
-      cycle = create(:assign_cycle, task_id: task.id, is_active: true)
+      create(:assign_cycle, task_id: task.id, is_active: true)
 
       tasks = Task.get_active_tasks
 
-      expect(tasks.count).to eq(1)
+      expect(tasks.length).to eq(1)
       expect(tasks.first.id).to eq(task.id)
     end
 
     it "非アクティブなタスクは取得しないこと" do
       area = create(:area)
       task = create(:task, area_id: area.id)
-      cycle = create(:assign_cycle, task_id: task.id, is_active: false)
+      create(:assign_cycle, task_id: task.id, is_active: false)
 
       tasks = Task.get_active_tasks
 
-      expect(tasks.count).to eq(0)
+      expect(tasks.length).to eq(0)
     end
   end
 end

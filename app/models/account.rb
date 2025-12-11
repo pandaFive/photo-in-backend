@@ -6,8 +6,8 @@ class Account < ApplicationRecord
   has_many :account_areas
   has_many :areas, through: :account_areas
 
-  has_many :account_tags
-  has_many :tags, through: :account_tags
+  has_many :tag_accounts
+  has_many :tags, through: :tag_accounts
 
   has_many :comments
   has_many :completed_tasks

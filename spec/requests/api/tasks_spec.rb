@@ -98,9 +98,9 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "削除が成功した場合" do
-      it "Status 200が返ってくること" do
+      it "Status 204が返ってくること" do
         delete :destroy, params: { id: @task.id }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(204)
       end
     end
 

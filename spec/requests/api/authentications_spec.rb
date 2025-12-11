@@ -65,10 +65,11 @@ RSpec.describe Api::AuthenticationsController, type: :controller do
     end
 
     context "パラメータが不足している場合" do
-      it "エラーが発生すること" do
-        expect {
-          post :login, params: { account: { name: "testuser" } }
-        }.to raise_error
+      it "認証失敗のレスポンスが返ってくること" do
+        post :login, params: { account: { name: "testuser" } }
+        expect(response).to have_http_status(422)
+        json_response = JSON.parse(response.body, symbolize_names: true)
+        expect(json_response[:status]).to eq(402)
       end
     end
   end

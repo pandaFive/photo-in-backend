@@ -75,7 +75,7 @@ RSpec.describe Account, type: :model do
   describe "#add_tag" do
     it "アカウントにタグを追加できること" do
       account = create(:account_member)
-      tag = Tag.create(tag_name: "Test Tag")
+      tag = Tag.create(name: "Test Tag")
 
       expect { account.add_tag(tag) }.to change { account.tags.count }.by(1)
       expect(account.tags).to include(tag)
@@ -85,7 +85,7 @@ RSpec.describe Account, type: :model do
   describe "#remove_tag" do
     it "アカウントからタグを削除できること" do
       account = create(:account_member)
-      tag = Tag.create(tag_name: "Test Tag")
+      tag = Tag.create(name: "Test Tag")
       account.add_tag(tag)
 
       expect { account.remove_tag(tag) }.to change { account.tags.count }.by(-1)

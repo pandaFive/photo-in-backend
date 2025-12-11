@@ -40,8 +40,8 @@ RSpec.describe AssignCycle, type: :model do
     end
 
     it "アサイン可能なアカウントがいない場合はfalseを返すこと" do
-      # アカウントを削除してアサイン可能なアカウントをなくす
-      @account.destroy
+      # エリアの関連を削除してアサイン可能なアカウントをなくす
+      @account.areas.clear
 
       result = @cycle.assign
 
@@ -132,7 +132,7 @@ RSpec.describe AssignCycle, type: :model do
       area = create(:area)
       task = create(:task, area_id: area.id)
       active_cycle = create(:assign_cycle, task_id: task.id, is_active: true)
-      inactive_cycle = create(:assign_cycle, task_id: task.id, is_active: false)
+      create(:assign_cycle, task_id: task.id, is_active: false)
 
       unfulfilleds = AssignCycle.unfulfilleds
 
@@ -143,7 +143,7 @@ RSpec.describe AssignCycle, type: :model do
     it "非アクティブなcycleは取得しないこと" do
       area = create(:area)
       task = create(:task, area_id: area.id)
-      inactive_cycle = create(:assign_cycle, task_id: task.id, is_active: false)
+      create(:assign_cycle, task_id: task.id, is_active: false)
 
       unfulfilleds = AssignCycle.unfulfilleds
 

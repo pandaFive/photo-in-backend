@@ -32,7 +32,7 @@ RSpec.describe Area, type: :model do
 
       areas = Area.get_all_area
 
-      expect(areas.count).to eq(2)
+      expect(areas.length).to eq(2)
       expect(areas.map(&:id)).to include(area1.id, area2.id)
       expect(areas.map(&:name)).to include(area1.name, area2.name)
     end
