@@ -9,6 +9,8 @@ Rails.application.configure do
 
   config.hosts << "photo-in-backend_devcontainer-api-1:8000"
   config.enable_reloading = true
+  config.hosts << "api:3000"
+  config.hosts << "api"
 
   # Do not eager load code on boot.
   config.eager_load = false
