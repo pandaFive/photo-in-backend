@@ -8,9 +8,11 @@ services:
       - ../..:/workspaces:cached
     environment:
       TZ: Asia/Tokyo
+    depends_on:
+      - db
 
     # Overrides default command so things don't shut down after the process ends.
-    command: sleep infinity
+    command: bash -c "rails db:create && rails db:migrate && sleep infinity"
     # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
 
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
