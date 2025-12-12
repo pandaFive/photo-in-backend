@@ -36,45 +36,70 @@ class Account < ApplicationRecord
     self.tags.destroy(tag)
   end
 
+  # 単一アカウントのステータスを取得（1クエリで集計）
   def get_status
-    total = AssignHistory.where(account_id: self.id)
-              .where(completed: true)
-              .count
-    week = AssignHistory.where("completed_at > ?", 1.week.ago)
-              .where(account_id: self.id)
-              .count
-    assign = AssignHistory.where(account_id: self.id)
-              .where(ng: false)
-              .where(completed: false)
-              .count
-    ng = AssignHistory.where(account_id: self.id).where(ng: true).count
+    stats = AssignHistory.where(account_id: id)
+              .select(
+                "COUNT(CASE WHEN completed = true THEN 1 END) AS total_count",
+                "COUNT(CASE WHEN completed_at > '#{1.week.ago.to_fs(:db)}' THEN 1 END) AS week_count",
+                "COUNT(CASE WHEN ng = false AND completed = false THEN 1 END) AS assign_count",
+                "COUNT(CASE WHEN ng = true THEN 1 END) AS ng_count"
+              ).take
 
-    # ゼロ除算を避けるため、totalが0の場合はng_rateを0.0に設定
-    ng_rate = total.zero? ? 0.0 : (ng.to_f / total).floor(2)
+    total = stats&.total_count.to_i
+    ng_count = stats&.ng_count.to_i
+    ng_rate = total.zero? ? 0.0 : (ng_count.to_f / total).floor(2)
 
     {
-      id: self.id,
-      capacity: self.capacity,
-      createdAt: self.created_at,
-      updatedAt: self.updated_at,
-      name: self.name,
-      area: self.areas.pluck(:name),
+      id:,
+      capacity:,
+      createdAt: created_at,
+      updatedAt: updated_at,
+      name:,
+      area: areas.pluck(:name),
       total:,
-      week:,
+      week: stats&.week_count.to_i,
       ng_rate:,
-      assign:
+      assign: stats&.assign_count.to_i
     }
   end
 
   class << self
+    # 全メンバーのステータスをバッチ取得（N+1を回避）
     def get_role_one_status
-      res = []
+      members = Account.where(role: "member").includes(:areas)
 
-      Account.where(role: "member").each do |ele|
-        res.push(ele.get_status)
+      # 全メンバーの統計を一括取得
+      stats_by_account = AssignHistory
+        .where(account_id: members.pluck(:id))
+        .group(:account_id)
+        .select(
+          :account_id,
+          "COUNT(CASE WHEN completed = true THEN 1 END) AS total_count",
+          "COUNT(CASE WHEN completed_at > '#{1.week.ago.to_fs(:db)}' THEN 1 END) AS week_count",
+          "COUNT(CASE WHEN ng = false AND completed = false THEN 1 END) AS assign_count",
+          "COUNT(CASE WHEN ng = true THEN 1 END) AS ng_count"
+        ).index_by(&:account_id)
+
+      members.map do |account|
+        stats = stats_by_account[account.id]
+        total = stats&.total_count.to_i
+        ng_count = stats&.ng_count.to_i
+        ng_rate = total.zero? ? 0.0 : (ng_count.to_f / total).floor(2)
+
+        {
+          id: account.id,
+          capacity: account.capacity,
+          createdAt: account.created_at,
+          updatedAt: account.updated_at,
+          name: account.name,
+          area: account.areas.map(&:name),
+          total:,
+          week: stats&.week_count.to_i,
+          ng_rate:,
+          assign: stats&.assign_count.to_i
+        }
       end
-
-      res
     end
   end
 end

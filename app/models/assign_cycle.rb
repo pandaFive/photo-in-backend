@@ -4,51 +4,18 @@ class AssignCycle < ApplicationRecord
   has_many :assign_histories
   has_many :comments
 
-  # キャパシティの何倍まで許容するか
-  CAPACITY_MULTIPLIER = 4
-
-
   def assign
-    accounts = get_assignable
-
+    accounts = AssignableAccountsService.new(assign_cycle: self).call
     target = accounts.first
 
-    if target == nil
-      return false
-    end
+    return false if target.nil?
 
-    current_assign = AssignHistory.new(account_id: target.id, assign_cycle_id: self.id)
-
-    if current_assign.save
-      current_assign
-    else
-      false
-    end
+    current_assign = AssignHistory.new(account_id: target.id, assign_cycle_id: id)
+    current_assign.save ? current_assign : false
   end
 
   def get_assignable
-    task = self.try(:task)
-
-    # 既にこのcycleでにNGがついているAccountを取得
-    assigned = Account.left_joins(assign_histories: :assign_cycle)
-                  .where(assign_cycles: { id: self.id })
-
-    # アサインされているタスク数がキャパシティの#{CAPACITY_MULTIPLIER}倍以上になっているAccountを取得する
-    over_cap = Account.joins(:areas)
-                  .left_outer_joins(assign_histories: :assign_cycle)
-                  .group("accounts.id")
-                  .where(areas: { id: task.area.id })
-                  .where("assign_histories.ng = false OR assign_histories.ng IS NULL")
-                  .where("assign_histories.completed = false OR assign_histories.completed IS NULL")
-                  .having("COUNT(assign_histories.id) >= accounts.capacity * ?", CAPACITY_MULTIPLIER)
-
-    # エリア合致、未アサイン、キャパ範囲内、の3つの条件を満たす最初のAccountにアサイン
-    accounts = Account.joins(:areas)
-                  .where(areas: { id: task.area.id })
-                  .where.not(id: assigned.select(:id))
-                  .where.not(id: over_cap.select(:id))
-
-    accounts
+    AssignableAccountsService.new(assign_cycle: self).call
   end
 
   def completed
