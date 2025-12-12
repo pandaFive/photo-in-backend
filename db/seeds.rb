@@ -28,10 +28,10 @@ end
 
     h = c.assign
 
-    if h
-      if rand < 0.5
-        c.completed_test
-      end
+    if h && rand < 0.5
+      # シードデータ用：ランダムな過去日付で完了処理
+      h.update(completed: true, completed_at: Date.today - rand(1..7))
+      c.deactivation
     end
   end
 end
