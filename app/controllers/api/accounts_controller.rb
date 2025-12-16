@@ -1,5 +1,5 @@
 class Api::AccountsController < ApplicationController
-  before_action :authenticated?, only: [:get]
+  before_action :authenticated?, only: [:get, :create]
   def index
     accounts = Account.where(role: "member")
 
@@ -17,18 +17,24 @@ class Api::AccountsController < ApplicationController
   end
 
   def create
-    ap = create_params.tap do |whitelisted|
-      whitelisted.delete(:area)
+    validation = Validators::Accounts::Create.call(create_params.to_h.symbolize_keys)
+    unless validation.success?
+      render json: { errors: validation.errors, status: 422 }, status: :unprocessable_entity
+      return
     end
-    account = Account.new(ap)
-    account.capacity = 0 if account.capacity == nil
 
-    account.add_areas(create_params[:area])
+    policy = AccountPolicy.new(@current_account)
+    unless policy.create?
+      render_unauthorized
+      return
+    end
 
-    if account.save
-      render json: create_render_json(account)
+    result = Accounts::Create.new.call(validation.value)
+
+    if result.success?
+      render json: AccountPresenter.render_auth(result.account), status: result.status
     else
-      render json: { message: account.errors, status: 422 }, status: :unprocessable_entity
+      render json: { errors: result.errors, status: Rack::Utils::SYMBOL_TO_STATUS_CODE[result.status] }, status: result.status
     end
   end
 
