@@ -18,7 +18,7 @@ class Api::AccountsController < ApplicationController
   end
 
   def create
-    validation = ::Validators::Accounts::Create.call(create_params.to_h.symbolize_keys)
+    validation = ::Contracts::Accounts::Create.call(create_params.to_h.symbolize_keys)
     unless validation.success?
       render json: { errors: validation.errors, status: 422 }, status: :unprocessable_entity
       return
