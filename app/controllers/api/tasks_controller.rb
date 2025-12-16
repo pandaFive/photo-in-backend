@@ -20,7 +20,7 @@ class Api::TasksController < ApplicationController
   end
 
   def create
-    result = TaskCreationService.new(task_title: create_params[:task_title]).call
+    result = ::Services::TaskCreationService.new(task_title: create_params[:task_title], area_id: create_params[:area_id]).call
 
     if result.success?
       render json: result.task
@@ -112,7 +112,7 @@ class Api::TasksController < ApplicationController
 
   private
     def create_params
-      params.require(:task).permit(:task_title)
+      params.require(:task).permit(:task_title, :area_id)
     end
 
     def update_params
