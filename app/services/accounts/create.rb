@@ -1,8 +1,6 @@
 module Services
   module Accounts
     class Create
-      Result = Struct.new(:success?, :account, :errors, :status, keyword_init: true)
-
       def initialize(repository: Repository.new)
         @repository = repository
       end

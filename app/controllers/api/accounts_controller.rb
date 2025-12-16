@@ -1,5 +1,5 @@
 class Api::AccountsController < ApplicationController
-  before_action :authenticated?, only: [:get, :create]
+  before_action :authenticated?, only: [:get, :create, :show, :index]
 
   def index
     accounts = Account.where(role: "member")
@@ -8,13 +8,28 @@ class Api::AccountsController < ApplicationController
   end
 
   def get
-    render json: create_render_json(@current_account)
+    render json: ::Presenters::AccountPresenter.render_account(@current_account), status: :ok
   end
 
   def show
-    account = Account.find(params[:id])
+    validation = ::Contracts::Accounts::Show.call(params.permit(:id).to_h.symbolize_keys)
+    unless validation.success?
+      render json: { errors: validation.errors, status: 422 }, status: :unprocessable_entity
+      return
+    end
+    policy = ::Policies::AccountPolicy.new(@current_account)
+    unless policy.admin_only?
+      render_unauthorized
+      return
+    end
 
-    render json: account.get_status
+    result = ::Services::Accounts::Show.new.call(validation.value)
+
+    if result.success?
+      render json: ::Presenters::AccountPresenter.render_account(result.account), status: result.status
+    else
+      render json: { errors: result.errors, status: Rack::Utils::SYMBOL_TO_STATUS_CODE[result.status] }, status: result.status
+    end
   end
 
   def create
@@ -25,7 +40,7 @@ class Api::AccountsController < ApplicationController
     end
 
     policy = ::Policies::AccountPolicy.new(@current_account)
-    unless policy.create?
+    unless policy.admin_only?
       render_unauthorized
       return
     end

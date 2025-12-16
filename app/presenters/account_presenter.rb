@@ -11,5 +11,15 @@ module Presenters
         }
       }
     end
+
+    def self.render_account(account)
+      {
+        id: account.id,
+        createdAt: account.created_at,
+        capacity: account.capacity,
+        updatedAt: account.updated_at,
+        name: account.name
+      }
+    end
   end
 end

@@ -4,7 +4,7 @@ module Policies
       @account = account
     end
 
-    def create?
+    def admin_only?
       @account&.role == "admin"
     end
   end

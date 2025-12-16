@@ -2,6 +2,11 @@ require "rails_helper"
 
 RSpec.describe Api::AccountsController, type: :controller do
   describe "GET #index" do
+    before do
+      @admin = create(:account)
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
+    end
     context "正しい返り値が返ってくる場合" do
       before do
         @member = create(:account_member)
@@ -50,6 +55,11 @@ RSpec.describe Api::AccountsController, type: :controller do
   end
 
   describe "GET #show" do
+    before do
+      @admin = create(:account)
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
+    end
     context "正しい値が返ってくる場合" do
       before do
         @member = create(:account_member)
@@ -73,9 +83,9 @@ RSpec.describe Api::AccountsController, type: :controller do
     end
 
     context "データが登録されていない場合" do
-      it "internalserver errorが返ってくること" do
+      it "Not Foundが返ってくること" do
         get :show, params: { id: 1 }
-        expect(response).to have_http_status(500)
+        expect(response).to have_http_status(404)
       end
     end
   end
