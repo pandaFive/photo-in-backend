@@ -29,12 +29,12 @@ class ApplicationController < ActionController::API
 
     def render_not_found(error)
       Rails.logger.warn "Record not found: #{error.message}"
-      render json: { error: "Resource not found", status: 404 }, status: :not_found
+      render json: { error: "Resource not found", status: 500 }, status: :internal_server_error
     end
 
     def render_bad_request(error)
       Rails.logger.warn "Parameter missing: #{error.message}"
-      render json: { error: "Bad request", message: error.message, status: 400 }, status: :bad_request
+      render json: { error: "Bad request", message: error.message, status: 500 }, status: :internal_server_error
     end
 
     def create_render_json(account)

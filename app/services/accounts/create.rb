@@ -23,7 +23,7 @@ module Accounts
         return failure(account, account.errors.full_messages, :unprocessable_entity) unless @repository.save(account)
       end
 
-      Result.new(success?: true, account:, errors: [], status: :created)
+      Result.new(success?: true, account:, errors: [], status: :ok)
     end
 
     private

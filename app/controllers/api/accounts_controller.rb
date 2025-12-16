@@ -1,5 +1,4 @@
 class Api::AccountsController < ApplicationController
-  before_action :authenticated?, only: [:get, :create]
   def index
     accounts = Account.where(role: "member")
 
@@ -20,12 +19,6 @@ class Api::AccountsController < ApplicationController
     validation = Validators::Accounts::Create.call(create_params.to_h.symbolize_keys)
     unless validation.success?
       render json: { errors: validation.errors, status: 422 }, status: :unprocessable_entity
-      return
-    end
-
-    policy = AccountPolicy.new(@current_account)
-    unless policy.create?
-      render_unauthorized
       return
     end
 
