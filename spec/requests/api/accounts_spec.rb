@@ -83,11 +83,14 @@ RSpec.describe Api::AccountsController, type: :controller do
   describe "POST #create" do
     before do
       @area = create(:area)
+      @admin = create(:account) # role admin
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
     end
     context "データが登録される場合" do
       it "登録された情報が返されること" do
         post :create, params: { account: { name: "Test User", password: "password", role: "member", capacity: 2, area: [@area.id] } }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(201)
         expect(JSON.parse(response.body)["account"]["name"]).to eq("Test User")
       end
     end

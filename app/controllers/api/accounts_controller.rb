@@ -1,8 +1,6 @@
-require Rails.root.join("app/validators/accounts/create")
-require Rails.root.join("app/services/accounts/create")
-require Rails.root.join("app/presenters/account_presenter")
-
 class Api::AccountsController < ApplicationController
+  before_action :authenticated?, only: [:get, :create]
+
   def index
     accounts = Account.where(role: "member")
 
@@ -26,10 +24,16 @@ class Api::AccountsController < ApplicationController
       return
     end
 
-    result = Accounts::Create.new.call(validation.value)
+    policy = ::Policies::AccountPolicy.new(@current_account)
+    unless policy.create?
+      render_unauthorized
+      return
+    end
+
+    result = ::Services::Accounts::Create.new.call(validation.value)
 
     if result.success?
-      render json: AccountPresenter.render_auth(result.account), status: result.status
+      render json: ::Presenters::AccountPresenter.render_auth(result.account), status: result.status
     else
       render json: { errors: result.errors, status: Rack::Utils::SYMBOL_TO_STATUS_CODE[result.status] }, status: result.status
     end

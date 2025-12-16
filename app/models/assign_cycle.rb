@@ -5,7 +5,7 @@ class AssignCycle < ApplicationRecord
   has_many :comments
 
   def assign
-    accounts = AssignableAccountsService.new(assign_cycle: self).call
+    accounts = ::Services::AssignableAccountsService.new(assign_cycle: self).call
     target = accounts.first
 
     return false if target.nil?
@@ -15,7 +15,7 @@ class AssignCycle < ApplicationRecord
   end
 
   def get_assignable
-    AssignableAccountsService.new(assign_cycle: self).call
+    ::Services::AssignableAccountsService.new(assign_cycle: self).call
   end
 
   def completed
