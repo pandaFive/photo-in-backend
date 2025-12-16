@@ -4,9 +4,11 @@ module Policies; end
 module Presenters; end
 module Services; end
 module Domain; end
+module Contracts; end
 
 Rails.autoloaders.main.push_dir(Rails.root.join("app/validators"), namespace: Validators)
 Rails.autoloaders.main.push_dir(Rails.root.join("app/policies"), namespace: Policies)
 Rails.autoloaders.main.push_dir(Rails.root.join("app/presenters"), namespace: Presenters)
 Rails.autoloaders.main.push_dir(Rails.root.join("app/services"), namespace: Services)
 Rails.autoloaders.main.push_dir(Rails.root.join("app/domain"), namespace: Domain)
+Rails.autoloaders.main.push_dir(Rails.root.join("app/contracts"), namespace: Contracts)

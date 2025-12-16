@@ -20,7 +20,8 @@ module PhotoInBackend
       Rails.root.join("app/policies"),
       Rails.root.join("app/presenters"),
       Rails.root.join("app/services"),
-      Rails.root.join("app/domain")
+      Rails.root.join("app/domain"),
+      Rails.root.join("app/contracts")
     ]
     config.eager_load_paths += config.autoload_paths
 
