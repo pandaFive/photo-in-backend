@@ -27,16 +27,15 @@ module Accounts
     end
 
     private
+      def missing_area_ids(requested_ids, found_areas)
+        ids = Array(requested_ids).compact.map(&:to_i).uniq
+        return [] if ids.empty?
 
-    def missing_area_ids(requested_ids, found_areas)
-      ids = Array(requested_ids).compact.map(&:to_i).uniq
-      return [] if ids.empty?
+        ids - found_areas.pluck(:id)
+      end
 
-      ids - found_areas.pluck(:id)
-    end
-
-    def failure(account, errors, status)
-      Result.new(success?: false, account:, errors:, status:)
-    end
+      def failure(account, errors, status)
+        Result.new(success?: false, account:, errors:, status:)
+      end
   end
 end

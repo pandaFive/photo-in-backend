@@ -15,6 +15,13 @@ module PhotoInBackend
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w(assets tasks))
+    config.autoload_paths += [
+      Rails.root.join("app/validators"),
+      Rails.root.join("app/policies"),
+      Rails.root.join("app/presenters"),
+      Rails.root.join("app/services")
+    ]
+    config.eager_load_paths += config.autoload_paths
 
     # Configuration for the application, engines, and railties goes here.
     #

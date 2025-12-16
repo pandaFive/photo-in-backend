@@ -40,23 +40,22 @@ module Validators
       end
 
       private
+        def area_ids_format
+          return if area.nil?
 
-      def area_ids_format
-        return if area.nil?
+          unless area.is_a?(Array)
+            errors.add(:area, "must be an array")
+            return
+          end
 
-        unless area.is_a?(Array)
-          errors.add(:area, "must be an array")
-          return
+          return if area.all? { |id| id.to_s.match?(/\A\d+\z/) }
+
+          errors.add(:area, "must contain only numeric ids")
         end
 
-        return if area.all? { |id| id.to_s.match?(/\A\d+\z/) }
-
-        errors.add(:area, "must contain only numeric ids")
-      end
-
-      def area_ids
-        @area_ids ||= Array(area).compact.map(&:to_i)
-      end
+        def area_ids
+          @area_ids ||= Array(area).compact.map(&:to_i)
+        end
     end
   end
 end

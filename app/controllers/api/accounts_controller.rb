@@ -1,3 +1,7 @@
+require Rails.root.join("app/validators/accounts/create")
+require Rails.root.join("app/services/accounts/create")
+require Rails.root.join("app/presenters/account_presenter")
+
 class Api::AccountsController < ApplicationController
   def index
     accounts = Account.where(role: "member")
@@ -16,7 +20,7 @@ class Api::AccountsController < ApplicationController
   end
 
   def create
-    validation = Validators::Accounts::Create.call(create_params.to_h.symbolize_keys)
+    validation = ::Validators::Accounts::Create.call(create_params.to_h.symbolize_keys)
     unless validation.success?
       render json: { errors: validation.errors, status: 422 }, status: :unprocessable_entity
       return
