@@ -1,22 +1,28 @@
 module Services
   module Accounts
     class Create
-      Result = Struct.new(:success?, :account, :errors, :status, keyword_init: true)
-
       def initialize(repository: Repository.new)
         @repository = repository
       end
 
-      def call(params)
+      def call(params, current_account)
+        validation = ::Contracts::Accounts::Create.call(params)
+        return failure(nil, validation.errors, :unprocessable_entity) unless validation.success?
+
+        policy = ::Policies::AccountPolicy.new(current_account)
+
+        return failure(nil, ["権限がありません"], :forbidden) unless policy.admin_only?
+
+        value = validation.value
         account = @repository.build(
-          name: params[:name],
-          password: params[:password],
-          role: params[:role],
-          capacity: params[:capacity] || 0
+          name: value[:name],
+          password: value[:password],
+          role: value[:role],
+          capacity: value[:capacity] || 0
         )
 
-        areas = @repository.find_areas(params[:area_ids])
-        missing_ids = missing_area_ids(params[:area_ids], areas)
+        areas = @repository.find_areas(value[:area_ids])
+        missing_ids = missing_area_ids(value[:area_ids], areas)
         return failure(account, ["Area not found: #{missing_ids.join(', ')}"], :not_found) if missing_ids.present?
 
         Account.transaction do

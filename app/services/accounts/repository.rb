@@ -21,6 +21,32 @@ module Services
       def save(account)
         account.save
       end
+
+      def list_members
+        Account.where(role: "member").includes(:areas)
+      end
+
+      def get_account(id)
+        Account.find_by(id:)
+      end
+
+      def get_accounts_stats(members)
+        cutoff = 1.week.ago
+        AssignHistory
+          .where(account_id: members.select(:id))
+          .group(:account_id)
+          .select(
+            :account_id,
+            Arel.sql("COUNT(*) FILTER (WHERE completed IS TRUE) AS total_count"),
+            Arel.sql(
+              AssignHistory.sanitize_sql_array(
+                ["COUNT(*) FILTER (WHERE completed_at > ?) AS week_count", cutoff]
+              )
+            ),
+            Arel.sql("COUNT(*) FILTER (WHERE ng IS FALSE AND completed IS FALSE) AS assign_count"),
+            Arel.sql("COUNT(*) FILTER (WHERE ng IS TRUE) AS ng_count")
+          ).index_by(&:account_id)
+      end
     end
   end
 end
