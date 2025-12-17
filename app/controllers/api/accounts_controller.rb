@@ -1,5 +1,5 @@
 class Api::AccountsController < ApplicationController
-  before_action :authenticated?, only: [:get, :create, :show, :index]
+  before_action :authenticated?, only: [:get, :create, :show, :index, :update, :destroy]
 
   def index
     result = ::Services::Accounts::Index.new.call(@current_account)
@@ -35,18 +35,24 @@ class Api::AccountsController < ApplicationController
   end
 
   def update
-    account = Account.find(params[:id])
-    account.update(create_params)
+    update_params = create_params.to_h.symbolize_keys.merge(id: params[:id])
+    result = ::Services::Accounts::Update.new.call(update_params, @current_account)
 
-    render json: account
+    if result.success?
+      render json: ::Presenters::AccountPresenter.render_account(result.account), status: result.status
+    else
+      render json: { errors: result.errors, status: Rack::Utils::SYMBOL_TO_STATUS_CODE[result.status] }, status: result.status
+    end
   end
 
   def destroy
-    account = Account.find(params[:id])
+    result = ::Services::Accounts::Destroy.new.call(params.permit(:id).to_h.symbolize_keys, @current_account)
 
-    account.destroy
-
-    render json: { message: "deleted" }, status: 200
+    if result.success?
+      render json: { message: "deleted", status: result.status }, status: result.status
+    else
+      render json: { errors: result.errors, status: Rack::Utils::SYMBOL_TO_STATUS_CODE[result.status] }, status: result.status
+    end
   end
 
   private

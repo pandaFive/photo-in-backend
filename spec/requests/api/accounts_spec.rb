@@ -214,6 +214,9 @@ RSpec.describe Api::AccountsController, type: :controller do
 
   describe "PUT #update" do
     before do
+      @admin = create(:account)  # admin roleのアカウント
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
       @member = create(:account_member)
       @time = @member.updated_at
     end
@@ -232,9 +235,9 @@ RSpec.describe Api::AccountsController, type: :controller do
     end
 
     context "存在しないaccountのidが指定された場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         put :update, params: { id: 999999, account: { name: "更新" } }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
 
@@ -244,10 +247,37 @@ RSpec.describe Api::AccountsController, type: :controller do
         expect(response).to have_http_status(:internal_server_error)
       end
     end
+
+    context "memberユーザーがアクセスする場合" do
+      before do
+        member = create(:account_member)
+        token = JsonWebToken.encode({ account_id: member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 403が返ってくること" do
+        put :update, params: { id: @member.id, account: { name: "更新" } }
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "未認証ユーザーがアクセスする場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+
+      it "Status 401が返ってくること" do
+        put :update, params: { id: @member.id, account: { name: "更新" } }
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
   end
 
   describe "DELETE #destroy" do
     before do
+      @admin = create(:account)  # admin roleのアカウント
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
       @member = create(:account_member)
     end
 
@@ -263,15 +293,14 @@ RSpec.describe Api::AccountsController, type: :controller do
       end
 
       it "アカウントが削除されていること" do
-        delete :destroy, params: { id: @member.id }
-        expect(Account.all.count).to eq(0)
+        expect { delete :destroy, params: { id: @member.id } }.to change(Account, :count).by(-1)
       end
     end
 
     context "存在しないIDが指定された場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         delete :destroy, params: { id: 999999 }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
