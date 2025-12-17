@@ -2,9 +2,12 @@ class Api::AccountsController < ApplicationController
   before_action :authenticated?, only: [:get, :create, :show, :index]
 
   def index
-    accounts = Account.where(role: "member")
-
-    render json: accounts.get_role_one_status
+    result = ::Services::Accounts::Index.new.call(@current_account)
+    if result.success?
+      render json: ::Presenters::AccountPresenter.render_accounts(result.accounts, result.data), status: result.status
+    else
+      render json: { errors: result.errors, status: Rack::Utils::SYMBOL_TO_STATUS_CODE[result.status] }, status: result.status
+    end
   end
 
   def get
@@ -12,18 +15,7 @@ class Api::AccountsController < ApplicationController
   end
 
   def show
-    validation = ::Contracts::Accounts::Show.call(params.permit(:id).to_h.symbolize_keys)
-    unless validation.success?
-      render json: { errors: validation.errors, status: 422 }, status: :unprocessable_entity
-      return
-    end
-    policy = ::Policies::AccountPolicy.new(@current_account)
-    unless policy.admin_only?
-      render_unauthorized
-      return
-    end
-
-    result = ::Services::Accounts::Show.new.call(validation.value)
+    result = ::Services::Accounts::Show.new.call(params.permit(:id).to_h.symbolize_keys, @current_account)
 
     if result.success?
       render json: ::Presenters::AccountPresenter.render_account(result.account), status: result.status
@@ -33,19 +25,7 @@ class Api::AccountsController < ApplicationController
   end
 
   def create
-    validation = ::Contracts::Accounts::Create.call(create_params.to_h.symbolize_keys)
-    unless validation.success?
-      render json: { errors: validation.errors, status: 422 }, status: :unprocessable_entity
-      return
-    end
-
-    policy = ::Policies::AccountPolicy.new(@current_account)
-    unless policy.admin_only?
-      render_unauthorized
-      return
-    end
-
-    result = ::Services::Accounts::Create.new.call(validation.value)
+    result = ::Services::Accounts::Create.new.call(create_params.to_h.symbolize_keys, @current_account)
 
     if result.success?
       render json: ::Presenters::AccountPresenter.render_auth(result.account), status: result.status

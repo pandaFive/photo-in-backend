@@ -21,5 +21,27 @@ module Presenters
         name: account.name
       }
     end
+
+    def self.render_accounts(accounts, stats_by_account)
+      accounts.map do |account|
+        stats = stats_by_account[account.id]
+        total = stats&.total_count.to_i
+        ng_count = stats&.ng_count.to_i
+        ng_rate = total.zero? ? 0.0 : (ng_count.to_f / total).floor(2)
+
+        {
+          id: account.id,
+          capacity: account.capacity,
+          createdAt: account.created_at,
+          updatedAt: account.updated_at,
+          name: account.name,
+          area: account.areas.map(&:name),
+          total:,
+          week: stats&.week_count.to_i,
+          ng_rate:,
+          assign: stats&.assign_count.to_i
+        }
+      end
+    end
   end
 end
