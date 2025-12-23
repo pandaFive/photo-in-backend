@@ -5,7 +5,7 @@ class Api::AuthenticationsController < ApplicationController
     if account && account.authenticate(params[:account][:password])
       render json: ::Presenters::AccountPresenter.render_auth(account)
     else
-      render json: { status: 402 }, status: :unprocessable_entity
+      render json: { errors: ["Unprocessable Entity"], status: 422 }, status: :unprocessable_entity
     end
   end
 end

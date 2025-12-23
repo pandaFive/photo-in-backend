@@ -25,10 +25,14 @@ module Services
         missing_ids = missing_area_ids(value[:area_ids], areas)
         return failure(account, ["Area not found: #{missing_ids.join(', ')}"], :not_found) if missing_ids.present?
 
+        saved = false
         Account.transaction do
           @repository.assign_areas(account, areas)
-          return failure(account, account.errors.full_messages, :unprocessable_entity) unless @repository.save(account)
+          saved = @repository.save(account)
+          raise ActiveRecord::Rollback unless saved
         end
+
+        return failure(account, account.errors.full_messages, :unprocessable_entity) unless saved
 
         Result.new(success?: true, account:, errors: [], status: :created)
       end

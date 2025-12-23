@@ -132,6 +132,41 @@ RSpec.describe Services::Accounts::Create, type: :service do
           }.not_to change(Account, :count)
         end
       end
+
+      context "saveが失敗した場合" do
+        it "AccountAreaレコードが作成されないこと" do
+          # saveが失敗するモックリポジトリを作成
+          mock_repository = instance_double(Services::Accounts::Repository)
+          account = Account.new(name: "Test", password: "password123", role: "member")
+
+          allow(mock_repository).to receive(:build).and_return(account)
+          allow(mock_repository).to receive(:find_areas).and_return([area])
+          allow(mock_repository).to receive(:assign_areas) do |acc, areas|
+            acc.areas = areas
+          end
+          allow(mock_repository).to receive(:save).and_return(false)
+
+          expect {
+            described_class.new(repository: mock_repository).call(valid_params, admin)
+          }.not_to change(AccountArea, :count)
+        end
+
+        it "失敗結果を返すこと" do
+          mock_repository = instance_double(Services::Accounts::Repository)
+          account = Account.new(name: "Test", password: "password123", role: "member")
+          account.errors.add(:base, "保存に失敗しました")
+
+          allow(mock_repository).to receive(:build).and_return(account)
+          allow(mock_repository).to receive(:find_areas).and_return([area])
+          allow(mock_repository).to receive(:assign_areas)
+          allow(mock_repository).to receive(:save).and_return(false)
+
+          result = described_class.new(repository: mock_repository).call(valid_params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:unprocessable_entity)
+        end
+      end
     end
 
     describe "リファクタリング前後の入出力等価性" do

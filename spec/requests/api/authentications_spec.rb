@@ -45,7 +45,7 @@ RSpec.describe Api::AuthenticationsController, type: :controller do
         json_response = JSON.parse(response.body, symbolize_names: true)
 
         expect(json_response).to have_key(:status)
-        expect(json_response[:status]).to eq(402)
+        expect(json_response[:status]).to eq(422)
       end
     end
 
@@ -60,7 +60,7 @@ RSpec.describe Api::AuthenticationsController, type: :controller do
         json_response = JSON.parse(response.body, symbolize_names: true)
 
         expect(json_response).to have_key(:status)
-        expect(json_response[:status]).to eq(402)
+        expect(json_response[:status]).to eq(422)
       end
     end
 
@@ -69,7 +69,7 @@ RSpec.describe Api::AuthenticationsController, type: :controller do
         post :login, params: { account: { name: "testuser" } }
         expect(response).to have_http_status(422)
         json_response = JSON.parse(response.body, symbolize_names: true)
-        expect(json_response[:status]).to eq(402)
+        expect(json_response[:status]).to eq(422)
       end
     end
   end
