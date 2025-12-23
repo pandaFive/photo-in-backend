@@ -5,10 +5,14 @@
 
 # Read more: https://github.com/cyu/rack-cors
 
+# 許可するオリジンを環境変数で制御（カンマ区切りで複数指定可能）
+# 本番環境では必ず明示的なドメインを設定すること
+# 例: ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com
+allowed_origins = ENV.fetch("ALLOWED_ORIGINS", "http://localhost:3333").split(",").map(&:strip)
+
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    # origins "localhost:3001"
-    origins "*"
+    origins(*allowed_origins)
 
     resource "*",
       headers: :any,

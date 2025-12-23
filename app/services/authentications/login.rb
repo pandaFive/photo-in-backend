@@ -1,8 +1,6 @@
 module Services
   module Authentications
     class Login
-      Result = Struct.new(:success?, :account, :errors, :status, keyword_init: true)
-
       def call(params)
         # バリデーション
         validation = ::Contracts::Authentications::Login.call(params)
@@ -11,8 +9,14 @@ module Services
         # アカウント検索と認証（タイミング攻撃対策のため常にbcrypt処理を実行）
         account = Account.find_by(name: validation.value.name)
         authenticated = perform_authentication(account, validation.value.password)
-        return failure(["認証に失敗しました"], :unprocessable_entity) unless authenticated
 
+        unless authenticated
+          # 監査ログ: 認証失敗を記録（ユーザー名は記録するがパスワードは記録しない）
+          Rails.logger.warn "[AUTH] Login failed for user: #{validation.value.name}"
+          return failure(["認証に失敗しました"], :unprocessable_entity)
+        end
+
+        Rails.logger.info "[AUTH] Login successful for user: #{account.name} (ID: #{account.id})"
         Result.new(success?: true, account:, errors: [], status: :ok)
       end
 
