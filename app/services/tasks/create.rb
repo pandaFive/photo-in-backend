@@ -22,28 +22,42 @@ module Services
           return failure(nil, ["エリアが正しく設定されていません"], :bad_request)
         end
 
-        # 4. タスク作成
-        task = @repository.build(task_title: value[:task_title], area_id:)
+        # 4. タスク作成 & アサイン（トランザクションで保護）
+        task = nil
+        error_result = nil
 
-        unless @repository.save(task)
-          return failure(task, task.errors.full_messages, :unprocessable_entity)
+        ActiveRecord::Base.transaction do
+          task = @repository.build(task_title: value[:task_title], area_id:)
+
+          unless @repository.save(task)
+            error_result = failure(task, task.errors.full_messages, :unprocessable_entity)
+            raise ActiveRecord::Rollback
+          end
+
+          # AssignCycle作成
+          cycle = task.create_new_cycle
+          unless cycle&.persisted?
+            error_result = failure(task, ["AssignCycleの作成に失敗しました"], :unprocessable_entity)
+            raise ActiveRecord::Rollback
+          end
+
+          # アサイン実行
+          unless cycle.assign
+            error_result = failure(task, ["アサイン可能なアカウントがありません"], :unprocessable_entity)
+            raise ActiveRecord::Rollback
+          end
         end
 
-        # 5. AssignCycle作成 & アサイン
-        cycle = task.create_new_cycle
-        unless cycle.assign
-          return failure(task, ["アサイン可能なアカウントがありません"], :unprocessable_entity)
-        end
+        return error_result if error_result
 
         Result.new(success?: true, task:, errors: [], status: :created)
       end
 
       private
         # エリアIDの解決: 指定値 > タイトルから推論 > デフォルト
+        # @return [Integer, nil] エリアID、またはエリアが存在しない場合はnil
         def resolve_area_id(task_title, provided_area_id)
-          return provided_area_id if provided_area_id.present?
-
-          @repository.infer_area_id(task_title) || @repository.default_area_id
+          provided_area_id.presence || @repository.infer_area_id(task_title) || @repository.default_area_id
         end
 
         def failure(task, errors, status)

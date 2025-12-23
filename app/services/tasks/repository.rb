@@ -5,12 +5,6 @@ module Services
         Task.new(attrs)
       end
 
-      def find_area(id)
-        return nil if id.blank?
-
-        Area.find_by(id:)
-      end
-
       # タイトルからエリアを推論
       def infer_area_id(title)
         Area.get_area_id(title)

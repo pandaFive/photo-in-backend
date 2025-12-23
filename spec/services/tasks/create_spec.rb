@@ -165,12 +165,22 @@ RSpec.describe Services::Tasks::Create, type: :service do
       context "アサイン可能なアカウントがない場合" do
         let(:params) { { task_title: "テスト撮影タスク", area_id: area.id } }
 
-        it "タスクは作成されるがアサインは失敗すること" do
+        it "success?がfalseを返すこと" do
           result = described_class.new.call(params, admin_account)
-          # タスクは作成されるが、アサインできるアカウントがいない
           expect(result.success?).to be false
-          expect(result.task).to be_present
           expect(result.errors).to include("アサイン可能なアカウントがありません")
+        end
+
+        it "トランザクションがロールバックされTaskが保存されないこと" do
+          expect {
+            described_class.new.call(params, admin_account)
+          }.not_to change(Task, :count)
+        end
+
+        it "トランザクションがロールバックされAssignCycleが作成されないこと" do
+          expect {
+            described_class.new.call(params, admin_account)
+          }.not_to change(AssignCycle, :count)
         end
       end
     end
