@@ -18,7 +18,8 @@ module Presenters
         createdAt: account.created_at,
         capacity: account.capacity,
         updatedAt: account.updated_at,
-        name: account.name
+        name: account.name,
+        role: account.role
       }
     end
 

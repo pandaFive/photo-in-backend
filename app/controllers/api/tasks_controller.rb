@@ -89,7 +89,7 @@ class Api::TasksController < ApplicationController
     if cycle.assign
       render json: { message: "complete", result: true }
     else
-      render json: { message: "faild", result: false }
+      render json: { message: "failed", result: false }
     end
   end
 

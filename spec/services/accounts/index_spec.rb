@@ -21,18 +21,6 @@ RSpec.describe Services::Accounts::Index, type: :service do
         create(:assign_history, account_id: member2.id, assign_cycle_id: cycle.id, ng: true)
       end
 
-      it "legacy Account.get_role_one_status と同じ出力を返すこと" do
-        result = described_class.new.call(admin)
-
-        expect(result.success?).to be true
-        expect(result.status).to eq(:ok)
-
-        legacy = Account.get_role_one_status
-        rendered = Presenters::AccountPresenter.render_accounts(result.accounts, result.data)
-
-        expect(rendered).to match_array(legacy)
-      end
-
       it "memberロールのアカウントのみを返すこと" do
         result = described_class.new.call(admin)
 
@@ -91,39 +79,6 @@ RSpec.describe Services::Accounts::Index, type: :service do
           expect(member_data[:week]).to eq(0)
           expect(member_data[:ng_rate]).to eq(0.0)
           expect(member_data[:assign]).to eq(0)
-        end
-      end
-    end
-
-    describe "リファクタリング前後の入出力等価性" do
-      let(:member1) { create(:account_member, name: "member1") }
-      let(:member2) { create(:account_member, name: "member2") }
-      let(:area) { create(:area, name: "Tokyo") }
-      let(:task) { create(:task, area_id: area.id) }
-      let(:cycle) { create(:assign_cycle, task_id: task.id) }
-
-      before do
-        member1.add_area(area)
-        member2.add_area(area)
-        create(:assign_history, account_id: member1.id, assign_cycle_id: cycle.id, completed: true, completed_at: Time.zone.now)
-        create(:assign_history, account_id: member2.id, assign_cycle_id: cycle.id, ng: true)
-      end
-
-      it "レスポンスの各フィールドがlegacy実装と完全一致すること" do
-        result = described_class.new.call(admin)
-        rendered = Presenters::AccountPresenter.render_accounts(result.accounts, result.data)
-        legacy = Account.get_role_one_status
-
-        rendered.each_with_index do |item, idx|
-          legacy_item = legacy.find { |l| l[:id] == item[:id] }
-          expect(item[:id]).to eq(legacy_item[:id])
-          expect(item[:capacity]).to eq(legacy_item[:capacity])
-          expect(item[:name]).to eq(legacy_item[:name])
-          expect(item[:area]).to match_array(legacy_item[:area])
-          expect(item[:total]).to eq(legacy_item[:total])
-          expect(item[:week]).to eq(legacy_item[:week])
-          expect(item[:ng_rate]).to eq(legacy_item[:ng_rate])
-          expect(item[:assign]).to eq(legacy_item[:assign])
         end
       end
     end

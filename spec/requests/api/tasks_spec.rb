@@ -111,4 +111,253 @@ RSpec.describe Api::TasksController, type: :controller do
       end
     end
   end
+
+  describe "GET #show" do
+    before do
+      @area = create(:area)
+      @task = create(:task, area_id: @area.id)
+    end
+
+    context "存在するタスクの場合" do
+      it "Status 200が返ってくること" do
+        get :show, params: { id: @task.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "正しいデータが返ってくること" do
+        get :show, params: { id: @task.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["id"]).to eq(@task.id)
+        expect(json_response["task_title"]).to eq(@task.task_title)
+      end
+    end
+
+    context "存在しないタスクの場合" do
+      it "Status 500が返ってくること" do
+        get :show, params: { id: 999999 }
+        expect(response).to have_http_status(:internal_server_error)
+      end
+    end
+  end
+
+  describe "POST #add_tag" do
+    before do
+      @area = create(:area)
+      @task = create(:task, area_id: @area.id)
+      @tag = create(:tag, name: "重要")
+    end
+
+    context "有効なパラメータの場合" do
+      it "Status 200が返ってくること" do
+        post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "タスクにタグが紐付けられること" do
+        expect {
+          post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
+        }.to change { @task.tags.count }.by(1)
+      end
+
+      it "紐付けられたタグ一覧が返ってくること" do
+        post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response.length).to eq(1)
+        expect(json_response[0]["name"]).to eq("重要")
+      end
+    end
+
+    context "存在しないタスクの場合" do
+      it "Status 500が返ってくること" do
+        post :add_tag, params: { id: 999999, task_id: 999999, tag_id: @tag.id }
+        expect(response).to have_http_status(:internal_server_error)
+      end
+    end
+
+    context "存在しないタグの場合" do
+      it "Status 500が返ってくること" do
+        post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: 999999 }
+        expect(response).to have_http_status(:internal_server_error)
+      end
+    end
+  end
+
+  describe "DELETE #remove_tag" do
+    before do
+      @area = create(:area)
+      @task = create(:task, area_id: @area.id)
+      @tag = create(:tag, name: "重要")
+      @task.add_tag(@tag)
+    end
+
+    context "有効なパラメータの場合" do
+      it "Status 200が返ってくること" do
+        delete :remove_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "タスクからタグが削除されること" do
+        expect {
+          delete :remove_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
+        }.to change { @task.tags.count }.by(-1)
+      end
+
+      it "残りのタグ一覧が返ってくること" do
+        delete :remove_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response.length).to eq(0)
+      end
+    end
+
+    context "存在しないタスクの場合" do
+      it "Status 500が返ってくること" do
+        delete :remove_tag, params: { id: 999999, task_id: 999999, tag_id: @tag.id }
+        expect(response).to have_http_status(:internal_server_error)
+      end
+    end
+  end
+
+  describe "PUT #completed" do
+    before do
+      @member = create(:account_member)
+      @area = create(:area)
+      @task = create(:task, area_id: @area.id)
+      @cycle = create(:assign_cycle, task_id: @task.id)
+      @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, completed: false)
+    end
+
+    context "有効なパラメータの場合" do
+      it "Status 200が返ってくること" do
+        put :completed, params: { id: @history.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "completedがtrueになること" do
+        put :completed, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["result"]).to be true
+      end
+    end
+
+    context "存在しないAssignHistoryの場合" do
+      it "Status 500が返ってくること" do
+        put :completed, params: { id: 999999 }
+        expect(response).to have_http_status(:internal_server_error)
+      end
+    end
+  end
+
+  describe "PUT #ng" do
+    before do
+      @member = create(:account_member)
+      @area = create(:area)
+      @member.add_area(@area)
+      @task = create(:task, area_id: @area.id)
+      @cycle = create(:assign_cycle, task_id: @task.id)
+      @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, ng: false)
+    end
+
+    context "有効なパラメータの場合" do
+      it "Status 200が返ってくること" do
+        put :ng, params: { id: @history.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "ngがtrueになること" do
+        put :ng, params: { id: @history.id }
+        @history.reload
+        expect(@history.ng).to be true
+      end
+    end
+
+    context "存在しないAssignHistoryの場合" do
+      it "Status 500が返ってくること" do
+        put :ng, params: { id: 999999 }
+        expect(response).to have_http_status(:internal_server_error)
+      end
+    end
+  end
+
+  describe "POST #create_new_cycle" do
+    before do
+      @member = create(:account_member)
+      @area = create(:area)
+      @member.add_area(@area)
+      @task = create(:task, area_id: @area.id)
+    end
+
+    context "有効なパラメータの場合" do
+      it "Status 200が返ってくること" do
+        post :create_new_cycle, params: { id: @task.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "新しいAssignCycleが作成されること" do
+        expect {
+          post :create_new_cycle, params: { id: @task.id }
+        }.to change(AssignCycle, :count).by(1)
+      end
+    end
+
+    context "存在しないタスクの場合" do
+      it "Status 500が返ってくること" do
+        post :create_new_cycle, params: { id: 999999 }
+        expect(response).to have_http_status(:internal_server_error)
+      end
+    end
+  end
+
+  describe "GET #unfulfilleds_count" do
+    before do
+      @member = create(:account_member)
+      @area = create(:area)
+      @task = create(:task, area_id: @area.id)
+      @cycle = create(:assign_cycle, task_id: @task.id)
+    end
+
+    it "Status 200が返ってくること" do
+      get :unfulfilleds_count
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "数値が返ってくること" do
+      get :unfulfilleds_count
+      json_response = JSON.parse(response.body)
+      expect(json_response).to be_a(Integer)
+    end
+  end
+
+  describe "GET #get_complete_data" do
+    it "Status 200が返ってくること" do
+      get :get_complete_data
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "ハッシュが返ってくること" do
+      get :get_complete_data
+      json_response = JSON.parse(response.body)
+      expect(json_response).to be_a(Hash)
+    end
+  end
+
+  describe "GET #get_account_task" do
+    before do
+      @member = create(:account_member)
+      @area = create(:area)
+      @task = create(:task, area_id: @area.id)
+      @cycle = create(:assign_cycle, task_id: @task.id)
+      @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, completed: false, ng: false)
+    end
+
+    it "Status 200が返ってくること" do
+      get :get_account_task, params: { id: @member.id }
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "アカウントに割り当てられたタスクが返ってくること" do
+      get :get_account_task, params: { id: @member.id }
+      json_response = JSON.parse(response.body)
+      expect(json_response).to be_an(Array)
+    end
+  end
 end
