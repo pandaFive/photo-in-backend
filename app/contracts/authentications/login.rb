@@ -16,13 +16,11 @@ module Contracts
         )
 
         if contract.valid?
-          Result.new(success?: true, value: contract, errors: [])
+          Contracts::Result.new(success?: true, value: contract, errors: [])
         else
-          Result.new(success?: false, value: nil, errors: contract.errors.full_messages)
+          Contracts::Result.new(success?: false, value: nil, errors: contract.errors.full_messages)
         end
       end
-
-      Result = Struct.new(:success?, :value, :errors, keyword_init: true)
     end
   end
 end
