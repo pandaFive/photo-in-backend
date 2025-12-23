@@ -7,8 +7,8 @@ RSpec.describe Services::Tasks::Index, type: :service do
 
   describe "#call" do
     describe "正常系" do
-      let!(:task) { create(:task, area: area) }
-      let!(:cycle) { create(:assign_cycle, task: task, is_active: true) }
+      let!(:task) { create(:task, area:) }
+      let!(:cycle) { create(:assign_cycle, task:, is_active: true) }
 
       context "type='all'を指定した場合" do
         let(:params) { { type: "all" } }
@@ -145,8 +145,8 @@ RSpec.describe Services::Tasks::Index, type: :service do
     end
 
     describe "NGタスクが存在しない場合" do
-      let!(:task) { create(:task, area: area) }
-      let!(:cycle) { create(:assign_cycle, task: task, is_active: true) }
+      let!(:task) { create(:task, area:) }
+      let!(:cycle) { create(:assign_cycle, task:, is_active: true) }
       let!(:active_member) { create(:account_member, areas: [area]) }
       let!(:history) { create(:assign_history, assign_cycle: cycle, account: active_member, ng: false, completed: false) }
       let(:params) { { type: "ng" } }
