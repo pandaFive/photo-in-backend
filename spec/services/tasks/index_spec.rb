@@ -143,5 +143,49 @@ RSpec.describe Services::Tasks::Index, type: :service do
         expect(result.tasks).to be_empty
       end
     end
+
+    describe "NGタスクが存在しない場合" do
+      let!(:task) { create(:task, area: area) }
+      let!(:cycle) { create(:assign_cycle, task: task, is_active: true) }
+      let!(:active_member) { create(:account_member, areas: [area]) }
+      let!(:history) { create(:assign_history, assign_cycle: cycle, account: active_member, ng: false, completed: false) }
+      let(:params) { { type: "ng" } }
+
+      it "success?がtrueを返すこと" do
+        result = described_class.new.call(params, admin_account)
+        expect(result.success?).to be true
+      end
+
+      it "空の配列を返すこと" do
+        result = described_class.new.call(params, admin_account)
+        expect(result.tasks).to be_empty
+      end
+    end
+
+    describe "依存性注入" do
+      context "カスタムリポジトリを使用する場合" do
+        let(:mock_repository) { instance_double(Services::Tasks::Repository) }
+        let(:service) { described_class.new(repository: mock_repository) }
+        let(:params) { { type: "all" } }
+
+        it "指定されたリポジトリのlist_active_tasksを呼び出すこと" do
+          allow(mock_repository).to receive(:list_active_tasks).and_return([])
+          service.call(params, admin_account)
+          expect(mock_repository).to have_received(:list_active_tasks)
+        end
+      end
+
+      context "type='ng'でカスタムリポジトリを使用する場合" do
+        let(:mock_repository) { instance_double(Services::Tasks::Repository) }
+        let(:service) { described_class.new(repository: mock_repository) }
+        let(:params) { { type: "ng" } }
+
+        it "指定されたリポジトリのlist_ng_tasksを呼び出すこと" do
+          allow(mock_repository).to receive(:list_ng_tasks).and_return([])
+          service.call(params, admin_account)
+          expect(mock_repository).to have_received(:list_ng_tasks)
+        end
+      end
+    end
   end
 end
