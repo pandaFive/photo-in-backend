@@ -1,9 +1,10 @@
 class ApplicationController < ActionController::API
   include JsonWebToken
 
-  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
-  rescue_from ActionController::ParameterMissing, with: :render_bad_request
+  # rescue_fromは逆順で評価されるため、StandardErrorを最初に宣言
   rescue_from StandardError, with: :render_standard_error
+  rescue_from ActionController::ParameterMissing, with: :render_bad_request
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   # before_action :authenticated?
 
   def authenticated?
