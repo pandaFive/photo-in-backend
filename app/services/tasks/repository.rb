@@ -18,6 +18,16 @@ module Services
       def save(task)
         task.save
       end
+
+      # アクティブなタスク一覧を取得
+      def list_active_tasks
+        Task.get_active_tasks
+      end
+
+      # NG状態のタスク一覧を取得
+      def list_ng_tasks
+        Task.get_ng_tasks
+      end
     end
   end
 end

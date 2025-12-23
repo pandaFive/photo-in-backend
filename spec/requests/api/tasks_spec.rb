@@ -3,11 +3,14 @@ require "rails_helper"
 RSpec.describe Api::TasksController, type: :controller do
   describe "GET #index" do
     before do
+      @admin = create(:account)
       @member = create(:account_member)
       @area = create(:area)
       @task = create(:task, area_id: @area.id)
       @cycle = create(:assign_cycle, task_id: @task.id)
       @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, ng: true)
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
     end
     context "typeがallの場合" do
       it "Status 200が返ってくること" do
@@ -16,7 +19,7 @@ RSpec.describe Api::TasksController, type: :controller do
       end
       it "正しいデータが返ってくること" do
         get :index, params: { type: "all" }
-        expect(JSON.parse(response.body)[0]["title"]).to eq(@task.task_title)
+        expect(JSON.parse(response.body)[0]["task_title"]).to eq(@task.task_title)
       end
     end
     context "typeがngの場合" do
@@ -26,17 +29,26 @@ RSpec.describe Api::TasksController, type: :controller do
       end
       it "正しいデータが返ってくること" do
         get :index, params: { type: "ng" }
-        expect(JSON.parse(response.body)[0]["title"]).to eq(@task.task_title)
+        expect(JSON.parse(response.body)[0]["task_title"]).to eq(@task.task_title)
       end
     end
     context "typeが指定されなかった場合" do
-      it "Status 200が返ってくること" do
+      it "Status unprocessable_entityが返ってくること" do
         get :index
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:unprocessable_entity)
       end
-      it "正しいデータが返ってくること" do
+      it "エラーメッセージが返ってくること" do
         get :index
-        expect(JSON.parse(response.body)["message"]).to eq("not type")
+        expect(JSON.parse(response.body)["errors"]).to include("Type can't be blank")
+      end
+    end
+    context "認証なしの場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+      it "Status unauthorizedが返ってくること" do
+        get :index, params: { type: "all" }
+        expect(response).to have_http_status(:unauthorized)
       end
     end
   end

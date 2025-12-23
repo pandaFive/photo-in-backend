@@ -1,17 +1,11 @@
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:create]
+  before_action :authenticated?, only: [:index, :create]
 
   def index
-    type = params[:type]
-
-    if type == "all"
-      tasks = Task.get_active_tasks
-      render json: tasks
-    elsif type == "ng"
-      tasks = Task.get_ng_tasks
-      render json: tasks
-    else
-      render json: { message: "not type" }
+    result = ::Services::Tasks::Index.new.call(index_params, @current_account)
+    render_result(result) do
+      presenter_method = params[:type] == "ng" ? :render_ng_tasks : :render_active_tasks
+      ::Presenters::TaskPresenter.send(presenter_method, result.tasks)
     end
   end
 
@@ -110,6 +104,10 @@ class Api::TasksController < ApplicationController
   end
 
   private
+    def index_params
+      { type: params[:type] }
+    end
+
     def create_params
       params.require(:task).permit(:task_title, :area_id)
     end
