@@ -43,16 +43,19 @@ RSpec.describe Api::TasksController, type: :controller do
   describe "POST #create" do
     before do
       @before_count = Task.all.count
+      @admin = create(:account)
       @member = create(:account_member)
       @area = create(:area, id: 1)
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
     end
     context "タスクの登録が成功した場合" do
       before do
         @member.add_areas([@area.id])
       end
-      it "Status 200が返ってくること" do
+      it "Status createdが返ってくること" do
         post :create, params: { task: { task_title: "x テスト登録" } }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:created)
       end
       it "正しいデータが返ってくること" do
         post :create, params: { task: { task_title: "x テスト登録" } }
@@ -60,9 +63,28 @@ RSpec.describe Api::TasksController, type: :controller do
       end
     end
     context "タスクタイトルが指定されなかった場合" do
-      it "Status 400が返ってくること" do
-        post :create
-        expect(response).to have_http_status(:bad_request)
+      it "Status unprocessable_entityが返ってくること" do
+        post :create, params: { task: { task_title: "" } }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+    context "認証なしの場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+      it "Status unauthorizedが返ってくること" do
+        post :create, params: { task: { task_title: "テスト" } }
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+    context "member権限の場合" do
+      before do
+        member_token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{member_token}"
+      end
+      it "Status forbiddenが返ってくること" do
+        post :create, params: { task: { task_title: "テスト" } }
+        expect(response).to have_http_status(:forbidden)
       end
     end
   end

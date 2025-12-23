@@ -1,4 +1,6 @@
 class Api::TasksController < ApplicationController
+  before_action :authenticated?, only: [:create]
+
   def index
     type = params[:type]
 
@@ -20,12 +22,9 @@ class Api::TasksController < ApplicationController
   end
 
   def create
-    result = ::Services::TaskCreationService.new(task_title: create_params[:task_title], area_id: create_params[:area_id]).call
-
-    if result.success?
-      render json: result.task
-    else
-      render json: { message: result.error_message, status: 422 }, status: result.error_status
+    result = ::Services::Tasks::Create.new.call(create_params.to_h.symbolize_keys, @current_account)
+    render_result(result) do
+      ::Presenters::TaskPresenter.render_task(result.task)
     end
   end
 
