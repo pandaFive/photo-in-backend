@@ -108,5 +108,28 @@ RSpec.describe Contracts::Authentications::Login do
         expect(result.errors).to include("Password can't be blank")
       end
     end
+
+    context "passwordが72文字の場合" do
+      let(:params) { { name: "testuser", password: "a" * 72 } }
+
+      it "success?がtrueを返すこと" do
+        result = described_class.call(params)
+        expect(result.success?).to be true
+      end
+    end
+
+    context "passwordが73文字以上の場合" do
+      let(:params) { { name: "testuser", password: "a" * 73 } }
+
+      it "success?がfalseを返すこと" do
+        result = described_class.call(params)
+        expect(result.success?).to be false
+      end
+
+      it "エラーメッセージを返すこと" do
+        result = described_class.call(params)
+        expect(result.errors).to include("Password is too long (maximum is 72 characters)")
+      end
+    end
   end
 end

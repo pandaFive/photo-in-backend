@@ -6,7 +6,8 @@ module Contracts
       attr_accessor :name, :password
 
       validates :name, presence: true
-      validates :password, presence: true
+      # bcryptは72バイトまでしか処理しないため、DoS攻撃対策として上限を設定
+      validates :password, presence: true, length: { maximum: 72 }
 
       def self.call(params)
         contract = new(
