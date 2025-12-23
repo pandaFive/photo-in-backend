@@ -60,9 +60,9 @@ RSpec.describe Api::TasksController, type: :controller do
       end
     end
     context "タスクタイトルが指定されなかった場合" do
-      it "Status 500が返ってくること" do
+      it "Status 400が返ってくること" do
         post :create
-        expect(response).to have_http_status(500)
+        expect(response).to have_http_status(:bad_request)
       end
     end
   end
@@ -84,9 +84,9 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "存在しないtaskのidが指定された場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         put :update, params: { id: 9999, task: { task_title: "更新" } }
-        expect(response).to have_http_status(500)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -105,9 +105,9 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "存在しないtaskのidが指定された場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         delete :destroy, params: { id: 9999 }
-        expect(response).to have_http_status(500)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -133,9 +133,9 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "存在しないタスクの場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         get :show, params: { id: 999999 }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -168,16 +168,16 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "存在しないタスクの場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         post :add_tag, params: { id: 999999, task_id: 999999, tag_id: @tag.id }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
 
     context "存在しないタグの場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: 999999 }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -210,9 +210,9 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "存在しないタスクの場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         delete :remove_tag, params: { id: 999999, task_id: 999999, tag_id: @tag.id }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -240,9 +240,9 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "存在しないAssignHistoryの場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         put :completed, params: { id: 999999 }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -271,9 +271,9 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "存在しないAssignHistoryの場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         put :ng, params: { id: 999999 }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -300,9 +300,9 @@ RSpec.describe Api::TasksController, type: :controller do
     end
 
     context "存在しないタスクの場合" do
-      it "Status 500が返ってくること" do
+      it "Status 404が返ってくること" do
         post :create_new_cycle, params: { id: 999999 }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end

@@ -242,9 +242,9 @@ RSpec.describe Api::AccountsController, type: :controller do
     end
 
     context "更新される情報が指定されていない場合" do
-      it "Status 500が返ってくること" do
+      it "Status 400が返ってくること" do
         put :update, params: { id: @member.id }
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:bad_request)
       end
     end
 
