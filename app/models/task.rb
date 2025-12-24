@@ -25,15 +25,17 @@ class Task < ApplicationRecord
   end
 
   # 指定されたアカウントが現在のタスク担当者かどうかを判定
-  # 最新のAssignCycleの最新のAssignHistoryのaccount_idと比較
+  # アクティブなサイクルの、未完了かつNG以外の担当者のみが「現在の担当者」
   def current_assignee?(account)
     return false if account.nil?
 
-    # 単一クエリで最新の担当者IDを取得（N+1回避）
+    # 単一クエリで現在の担当者IDを取得（N+1回避）
+    # get_account_assign_tasks と同じ条件でフィルタ
     current_account_id = AssignHistory
       .joins(:assign_cycle)
-      .where(assign_cycles: { task_id: id })
-      .order("assign_cycles.id DESC, assign_histories.id DESC")
+      .where(assign_cycles: { task_id: id, is_active: true })
+      .where(assign_histories: { ng: false, completed: false })
+      .order("assign_histories.id DESC")
       .limit(1)
       .pick(:account_id)
 

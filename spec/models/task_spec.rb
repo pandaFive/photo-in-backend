@@ -220,5 +220,29 @@ RSpec.describe Task, type: :model do
         expect(task.current_assignee?(account)).to be false
       end
     end
+
+    context "タスクが完了済みの場合" do
+      let(:cycle) { create(:assign_cycle, task_id: task.id, is_active: false) }
+
+      before do
+        create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, completed: true)
+      end
+
+      it "falseを返すこと（完了済みタスクは編集不可）" do
+        expect(task.current_assignee?(account)).to be false
+      end
+    end
+
+    context "履歴がNG済みの場合" do
+      let(:cycle) { create(:assign_cycle, task_id: task.id, is_active: true) }
+
+      before do
+        create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id, ng: true)
+      end
+
+      it "falseを返すこと（NG済みは担当者ではない）" do
+        expect(task.current_assignee?(account)).to be false
+      end
+    end
   end
 end
