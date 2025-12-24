@@ -158,6 +158,21 @@ RSpec.describe Services::Tasks::Destroy, type: :service do
         expect(mock_repository).to have_received(:find_by_id).with(target_task.id)
         expect(mock_repository).to have_received(:delete).with(target_task)
       end
+
+      context "削除が失敗した場合" do
+        it "unprocessable_entityを返すこと" do
+          mock_repository = instance_double(Services::Tasks::Repository)
+          allow(mock_repository).to receive(:find_by_id).with(target_task.id).and_return(target_task)
+          allow(mock_repository).to receive(:delete).with(target_task).and_return(false)
+
+          service = described_class.new(repository: mock_repository)
+          result = service.call(valid_params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:unprocessable_entity)
+          expect(result.errors).to include("タスクの削除に失敗しました")
+        end
+      end
     end
 
     describe "関連データの処理" do

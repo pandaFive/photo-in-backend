@@ -24,7 +24,8 @@ module Services
         return failure(["タスクが見つかりません"], :not_found) if task.nil?
 
         # 削除実行
-        @repository.delete(task)
+        deleted = @repository.delete(task)
+        return failure(["タスクの削除に失敗しました"], :unprocessable_entity) unless deleted
 
         success
       end
