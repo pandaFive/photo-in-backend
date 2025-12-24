@@ -145,4 +145,80 @@ RSpec.describe Task, type: :model do
       expect(tasks.length).to eq(0)
     end
   end
+
+  describe "#current_assignee?" do
+    let(:area) { create(:area) }
+    let(:task) { create(:task, area_id: area.id) }
+    let(:account) { create(:account_member) }
+    let(:other_account) { create(:account_member) }
+
+    context "タスクにAssignCycleとAssignHistoryがある場合" do
+      let(:cycle) { create(:assign_cycle, task_id: task.id, is_active: true) }
+
+      before do
+        create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id)
+      end
+
+      it "担当者の場合はtrueを返すこと" do
+        expect(task.current_assignee?(account)).to be true
+      end
+
+      it "担当者でない場合はfalseを返すこと" do
+        expect(task.current_assignee?(other_account)).to be false
+      end
+    end
+
+    context "複数のAssignCycleがある場合" do
+      let(:old_cycle) { create(:assign_cycle, task_id: task.id, is_active: false) }
+      let(:new_cycle) { create(:assign_cycle, task_id: task.id, is_active: true) }
+
+      before do
+        create(:assign_history, account_id: other_account.id, assign_cycle_id: old_cycle.id)
+        create(:assign_history, account_id: account.id, assign_cycle_id: new_cycle.id)
+      end
+
+      it "最新のサイクルの担当者の場合はtrueを返すこと" do
+        expect(task.current_assignee?(account)).to be true
+      end
+
+      it "古いサイクルの担当者の場合はfalseを返すこと" do
+        expect(task.current_assignee?(other_account)).to be false
+      end
+    end
+
+    context "同一サイクルで複数のAssignHistoryがある場合" do
+      let(:cycle) { create(:assign_cycle, task_id: task.id, is_active: true) }
+
+      before do
+        # 古い履歴（NG済み）
+        create(:assign_history, account_id: other_account.id, assign_cycle_id: cycle.id, ng: true)
+        # 新しい履歴（現在の担当者）
+        create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id)
+      end
+
+      it "最新の履歴の担当者の場合はtrueを返すこと" do
+        expect(task.current_assignee?(account)).to be true
+      end
+
+      it "過去の履歴の担当者の場合はfalseを返すこと" do
+        expect(task.current_assignee?(other_account)).to be false
+      end
+    end
+
+    context "AssignCycleがない場合" do
+      it "falseを返すこと" do
+        expect(task.current_assignee?(account)).to be false
+      end
+    end
+
+    context "AssignHistoryがない場合" do
+      before do
+        create(:assign_cycle, task_id: task.id, is_active: true)
+      end
+
+      it "falseを返すこと" do
+        expect(task.current_assignee?(account)).to be false
+      end
+    end
+  end
 end

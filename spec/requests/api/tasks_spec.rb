@@ -102,25 +102,121 @@ RSpec.describe Api::TasksController, type: :controller do
   end
   describe "PUT #update" do
     before do
+      @admin = create(:account)
+      @member = create(:account_member)
+      @other_member = create(:account_member)
       @area = create(:area)
       @task = create(:task, area_id: @area.id, task_title: "元のタイトル")
     end
-    context "更新が成功した場合" do
+
+    # ヘルパー: タスクにメンバーを担当者として割り当てる
+    def assign_to_member(task, account)
+      cycle = create(:assign_cycle, task_id: task.id, is_active: true)
+      create(:assign_history, account_id: account.id, assign_cycle_id: cycle.id)
+    end
+
+    context "管理者が更新する場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
       it "Status 200が返ってくること" do
         put :update, params: { id: @task.id, task: { task_title: "更新されたタイトル" } }
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(:ok)
       end
 
       it "更新されたデータが返ってくること" do
         put :update, params: { id: @task.id, task: { task_title: "更新されたタイトル" } }
-        expect(JSON.parse(response.body)["task_title"]).to eq("更新されたタイトル")
+        json_response = JSON.parse(response.body)
+        expect(json_response["task_title"]).to eq("更新されたタイトル")
+      end
+
+      it "area_nameが返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "更新されたタイトル" } }
+        json_response = JSON.parse(response.body)
+        expect(json_response["area_name"]).to eq(@area.name)
+      end
+    end
+
+    context "担当メンバーが更新する場合" do
+      before do
+        assign_to_member(@task, @member)
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "担当者更新" } }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "更新されたデータが返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "担当者更新" } }
+        json_response = JSON.parse(response.body)
+        expect(json_response["task_title"]).to eq("担当者更新")
+      end
+    end
+
+    context "非担当メンバーが更新する場合" do
+      before do
+        assign_to_member(@task, @member)
+        token = JsonWebToken.encode({ account_id: @other_member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status forbiddenが返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "不正な更新" } }
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "不正な更新" } }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("権限がありません")
+      end
+    end
+
+    context "割り当てなしタスクをメンバーが更新する場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status forbiddenが返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "不正な更新" } }
+        expect(response).to have_http_status(:forbidden)
       end
     end
 
     context "存在しないtaskのidが指定された場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
       it "Status 404が返ってくること" do
         put :update, params: { id: 9999, task: { task_title: "更新" } }
         expect(response).to have_http_status(:not_found)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :update, params: { id: 9999, task: { task_title: "更新" } }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("タスクが見つかりません")
+      end
+    end
+
+    context "認証なしの場合" do
+      it "Status unauthorizedが返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "更新" } }
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :update, params: { id: @task.id, task: { task_title: "更新" } }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("unauthorized")
       end
     end
   end

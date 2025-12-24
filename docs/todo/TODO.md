@@ -24,7 +24,7 @@ Controller → Contract → Service → Repository → Model
 |--------------|---------|-------|------|
 | Accounts | 6/6 | 0 | ✅ 完了 |
 | Authentications | 1/1 | 0 | ✅ 完了 |
-| Tasks | 3/12 | 9 | 🔶 進行中 |
+| Tasks | 4/12 | 8 | 🔶 進行中 |
 | Areas | 0/5 | 5 | ⬜ 未着手 |
 | Comments | 0/5 | 5 | ⬜ 未着手 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
@@ -32,7 +32,7 @@ Controller → Contract → Service → Repository → Model
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 10/38 (26%)**
+**合計: 11/38 (29%)**
 
 ---
 
@@ -47,13 +47,15 @@ Controller → Contract → Service → Repository → Model
   - Repository: `find_by_id`追加
   - Presenter: `TaskPresenter.render_task`（既存）
   - 認証必須化
-
-### 未移行
-- [ ] `PUT /api/tasks/:id` (update)
+- [x] `PUT /api/tasks/:id` (update)
   - Contract: `Contracts::Tasks::Update`
   - Service: `Services::Tasks::Update`
-  - Repository: `update(task, attrs)`
+  - Repository: `update(task, attrs)`追加
   - Presenter: `TaskPresenter.render_task`（既存）
+  - Model: `Task#current_assignee?`追加
+  - 認証必須化、認可追加（admin + 担当者）
+
+### 未移行
 
 - [ ] `DELETE /api/tasks/:id` (destroy)
   - Contract: `Contracts::Tasks::Destroy`
@@ -198,6 +200,7 @@ Controller → Contract → Service → Repository → Model
 | `GET /api/tasks` | 認証必須化、`title` → `task_title` | #62 |
 | `POST /api/tasks` | 認証必須化、レスポンス形式変更 | #61 |
 | `GET /api/tasks/:id` | 認証必須化、Presenter経由レスポンス | - |
+| `PUT /api/tasks/:id` | 認証必須化、認可追加(admin+担当者)、`is_complete`削除、Presenter経由レスポンス | - |
 
 ---
 
@@ -214,9 +217,9 @@ Controller → Contract → Service → Repository → Model
 - `app/contracts/authentications/login.rb`
 - `app/services/authentications/login.rb`
 
-### Tasks Index/Create
-- `app/contracts/tasks/index.rb`, `create.rb`
-- `app/services/tasks/index.rb`, `create.rb`
+### Tasks Index/Create/Show/Update
+- `app/contracts/tasks/index.rb`, `create.rb`, `show.rb`, `update.rb`
+- `app/services/tasks/index.rb`, `create.rb`, `show.rb`, `update.rb`
 - `app/services/tasks/repository.rb`
 - `app/presenters/task_presenter.rb`
 

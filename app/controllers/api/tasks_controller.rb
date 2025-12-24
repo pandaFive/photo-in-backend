@@ -1,5 +1,5 @@
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :show, :create]
+  before_action :authenticated?, only: [:index, :show, :create, :update]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -24,10 +24,10 @@ class Api::TasksController < ApplicationController
   end
 
   def update
-    task = Task.find(params[:id])
-    task.update(update_params)
-
-    render json: task
+    result = ::Services::Tasks::Update.new.call(update_params, @current_account)
+    render_result(result) do
+      ::Presenters::TaskPresenter.render_task(result.task)
+    end
   end
 
   def destroy
@@ -118,7 +118,7 @@ class Api::TasksController < ApplicationController
     end
 
     def update_params
-      params.require(:task).permit(:task_title, :is_complete)
+      { id: params[:id], task_title: params.dig(:task, :task_title) }
     end
 
     def complete_params

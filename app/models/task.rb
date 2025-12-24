@@ -24,6 +24,12 @@ class Task < ApplicationRecord
     assign_cycles.create
   end
 
+  # 指定されたアカウントが現在のタスク担当者かどうかを判定
+  def current_assignee?(account)
+    current_history = assign_cycles.order(:id).last&.assign_histories&.order(:id)&.last
+    current_history&.account_id == account.id
+  end
+
   class << self
     # idのAccountに現在アサインされているタスクを取得する
     def get_account_assign_tasks(id)

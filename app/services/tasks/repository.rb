@@ -24,6 +24,11 @@ module Services
         task.save
       end
 
+      # タスクを更新
+      def update(task, attrs)
+        task.update(attrs)
+      end
+
       # アクティブなタスク一覧を取得
       def list_active_tasks
         Task.get_active_tasks
