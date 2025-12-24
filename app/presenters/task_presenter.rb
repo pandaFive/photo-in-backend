@@ -45,5 +45,15 @@ module Presenters
         }
       end
     end
+
+    # タスクに紐付くタグ一覧をフォーマット
+    def self.render_tags(task)
+      task.tags.map do |tag|
+        {
+          id: tag.id,
+          name: tag.name
+        }
+      end
+    end
   end
 end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy]
+  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -40,21 +40,17 @@ class Api::TasksController < ApplicationController
   end
 
   def add_tag
-    task = Task.find(params[:task_id])
-    tag = Tag.find(params[:tag_id])
-
-    task.add_tag(tag)
-
-    render json: task.tags
+    result = ::Services::Tasks::AddTag.new.call(tag_params, @current_account)
+    render_result(result) do
+      ::Presenters::TaskPresenter.render_tags(result.task)
+    end
   end
 
   def remove_tag
-    task = Task.find(params[:task_id])
-    tag = Tag.find(params[:tag_id])
-
-    task.remove_tag(tag)
-
-    render json: task.tags
+    result = ::Services::Tasks::RemoveTag.new.call(tag_params, @current_account)
+    render_result(result) do
+      ::Presenters::TaskPresenter.render_tags(result.task)
+    end
   end
 
   def completed
@@ -126,6 +122,10 @@ class Api::TasksController < ApplicationController
 
     def destroy_params
       { id: params[:id] }
+    end
+
+    def tag_params
+      { task_id: params[:id], tag_id: params[:tag_id] }
     end
 
     def complete_params

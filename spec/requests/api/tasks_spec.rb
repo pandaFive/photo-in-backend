@@ -373,77 +373,135 @@ RSpec.describe Api::TasksController, type: :controller do
 
   describe "POST #add_tag" do
     before do
+      @admin = create(:account, role: "admin")
+      @member = create(:account_member)
       @area = create(:area)
       @task = create(:task, area_id: @area.id)
       @tag = create(:tag, name: "重要")
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
     end
 
-    context "有効なパラメータの場合" do
-      it "Status 200が返ってくること" do
-        post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
-        expect(response).to have_http_status(:ok)
+    context "認証済み管理者の場合" do
+      context "有効なパラメータの場合" do
+        it "Status 200が返ってくること" do
+          post :add_tag, params: { id: @task.id, tag_id: @tag.id }
+          expect(response).to have_http_status(:ok)
+        end
+
+        it "タスクにタグが紐付けられること" do
+          expect {
+            post :add_tag, params: { id: @task.id, tag_id: @tag.id }
+          }.to change { @task.tags.count }.by(1)
+        end
+
+        it "紐付けられたタグ一覧が返ってくること" do
+          post :add_tag, params: { id: @task.id, tag_id: @tag.id }
+          json_response = JSON.parse(response.body)
+          expect(json_response.length).to eq(1)
+          expect(json_response[0]["name"]).to eq("重要")
+        end
       end
 
-      it "タスクにタグが紐付けられること" do
-        expect {
-          post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
-        }.to change { @task.tags.count }.by(1)
+      context "存在しないタスクの場合" do
+        it "Status 404が返ってくること" do
+          post :add_tag, params: { id: 999999, tag_id: @tag.id }
+          expect(response).to have_http_status(:not_found)
+        end
       end
 
-      it "紐付けられたタグ一覧が返ってくること" do
-        post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
-        json_response = JSON.parse(response.body)
-        expect(json_response.length).to eq(1)
-        expect(json_response[0]["name"]).to eq("重要")
+      context "存在しないタグの場合" do
+        it "Status 404が返ってくること" do
+          post :add_tag, params: { id: @task.id, tag_id: 999999 }
+          expect(response).to have_http_status(:not_found)
+        end
       end
     end
 
-    context "存在しないタスクの場合" do
-      it "Status 404が返ってくること" do
-        post :add_tag, params: { id: 999999, task_id: 999999, tag_id: @tag.id }
-        expect(response).to have_http_status(:not_found)
+    context "認証なしの場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+
+      it "Status 401が返ってくること" do
+        post :add_tag, params: { id: @task.id, tag_id: @tag.id }
+        expect(response).to have_http_status(:unauthorized)
       end
     end
 
-    context "存在しないタグの場合" do
-      it "Status 404が返ってくること" do
-        post :add_tag, params: { id: @task.id, task_id: @task.id, tag_id: 999999 }
-        expect(response).to have_http_status(:not_found)
+    context "memberユーザーの場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 403が返ってくること" do
+        post :add_tag, params: { id: @task.id, tag_id: @tag.id }
+        expect(response).to have_http_status(:forbidden)
       end
     end
   end
 
   describe "DELETE #remove_tag" do
     before do
+      @admin = create(:account, role: "admin")
+      @member = create(:account_member)
       @area = create(:area)
       @task = create(:task, area_id: @area.id)
       @tag = create(:tag, name: "重要")
       @task.add_tag(@tag)
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
     end
 
-    context "有効なパラメータの場合" do
-      it "Status 200が返ってくること" do
-        delete :remove_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
-        expect(response).to have_http_status(:ok)
+    context "認証済み管理者の場合" do
+      context "有効なパラメータの場合" do
+        it "Status 200が返ってくること" do
+          delete :remove_tag, params: { id: @task.id, tag_id: @tag.id }
+          expect(response).to have_http_status(:ok)
+        end
+
+        it "タスクからタグが削除されること" do
+          expect {
+            delete :remove_tag, params: { id: @task.id, tag_id: @tag.id }
+          }.to change { @task.tags.count }.by(-1)
+        end
+
+        it "残りのタグ一覧が返ってくること" do
+          delete :remove_tag, params: { id: @task.id, tag_id: @tag.id }
+          json_response = JSON.parse(response.body)
+          expect(json_response.length).to eq(0)
+        end
       end
 
-      it "タスクからタグが削除されること" do
-        expect {
-          delete :remove_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
-        }.to change { @task.tags.count }.by(-1)
-      end
-
-      it "残りのタグ一覧が返ってくること" do
-        delete :remove_tag, params: { id: @task.id, task_id: @task.id, tag_id: @tag.id }
-        json_response = JSON.parse(response.body)
-        expect(json_response.length).to eq(0)
+      context "存在しないタスクの場合" do
+        it "Status 404が返ってくること" do
+          delete :remove_tag, params: { id: 999999, tag_id: @tag.id }
+          expect(response).to have_http_status(:not_found)
+        end
       end
     end
 
-    context "存在しないタスクの場合" do
-      it "Status 404が返ってくること" do
-        delete :remove_tag, params: { id: 999999, task_id: 999999, tag_id: @tag.id }
-        expect(response).to have_http_status(:not_found)
+    context "認証なしの場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+
+      it "Status 401が返ってくること" do
+        delete :remove_tag, params: { id: @task.id, tag_id: @tag.id }
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context "memberユーザーの場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 403が返ってくること" do
+        delete :remove_tag, params: { id: @task.id, tag_id: @tag.id }
+        expect(response).to have_http_status(:forbidden)
       end
     end
   end

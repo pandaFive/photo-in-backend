@@ -24,7 +24,7 @@ Controller → Contract → Service → Repository → Model
 |--------------|---------|-------|------|
 | Accounts | 6/6 | 0 | ✅ 完了 |
 | Authentications | 1/1 | 0 | ✅ 完了 |
-| Tasks | 5/12 | 7 | 🔶 進行中 |
+| Tasks | 7/12 | 5 | 🔶 進行中 |
 | Areas | 0/5 | 5 | ⬜ 未着手 |
 | Comments | 0/5 | 5 | ⬜ 未着手 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
@@ -32,7 +32,7 @@ Controller → Contract → Service → Repository → Model
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 12/38 (32%)**
+**合計: 14/38 (37%)**
 
 ---
 
@@ -60,16 +60,19 @@ Controller → Contract → Service → Repository → Model
   - Repository: `delete(task)`追加
   - 認証必須化、認可追加（admin_only）
 
-### 未移行
-
-- [ ] `POST /api/tasks/:id/tag` (add_tag)
+- [x] `POST /api/tasks/:id/tag` (add_tag)
   - Contract: `Contracts::Tasks::AddTag`
   - Service: `Services::Tasks::AddTag`
-  - Presenter: `TagPresenter.render_tags`（新規）
-
-- [ ] `DELETE /api/tasks/:id/tag` (remove_tag)
+  - Repository: `find_tag`, `add_tag`追加
+  - Presenter: `TaskPresenter.render_tags`（新規）
+  - 認証必須化、認可追加（admin_only）
+- [x] `DELETE /api/tasks/:id/tag` (remove_tag)
   - Contract: `Contracts::Tasks::RemoveTag`
   - Service: `Services::Tasks::RemoveTag`
+  - Repository: `remove_tag`追加
+  - 認証必須化、認可追加（admin_only）
+
+### 未移行
 
 - [ ] `PUT /api/tasks/:id/completed` (completed)
   - Contract: `Contracts::Tasks::Completed`

@@ -178,4 +178,98 @@ RSpec.describe Services::Tasks::Repository, type: :service do
       expect(Task).to have_received(:get_ng_tasks)
     end
   end
+
+  describe "#find_tag" do
+    let!(:tag) { create(:tag) }
+
+    context "存在するIDの場合" do
+      it "タグを返すこと" do
+        result = repository.find_tag(tag.id)
+        expect(result).to eq(tag)
+      end
+    end
+
+    context "存在しないIDの場合" do
+      it "nilを返すこと" do
+        result = repository.find_tag(999999)
+        expect(result).to be_nil
+      end
+    end
+  end
+
+  describe "#add_tag" do
+    let!(:task) { create(:task, area:) }
+    let!(:tag) { create(:tag) }
+
+    context "タグが未追加の場合" do
+      it "trueを返すこと" do
+        result = repository.add_tag(task, tag)
+        expect(result).to be true
+      end
+
+      it "タスクにタグが追加されること" do
+        repository.add_tag(task, tag)
+        expect(task.tags).to include(tag)
+      end
+
+      it "TagTaskレコードが作成されること" do
+        expect {
+          repository.add_tag(task, tag)
+        }.to change(TagTask, :count).by(1)
+      end
+    end
+
+    context "タグが既に追加されている場合" do
+      before { task.tags << tag }
+
+      it "falseを返すこと" do
+        result = repository.add_tag(task, tag)
+        expect(result).to be false
+      end
+
+      it "TagTaskレコードが増えないこと" do
+        expect {
+          repository.add_tag(task, tag)
+        }.not_to change(TagTask, :count)
+      end
+    end
+  end
+
+  describe "#remove_tag" do
+    let!(:task) { create(:task, area:) }
+    let!(:tag) { create(:tag) }
+
+    context "タグが追加されている場合" do
+      before { task.tags << tag }
+
+      it "trueを返すこと" do
+        result = repository.remove_tag(task, tag)
+        expect(result).to be true
+      end
+
+      it "タスクからタグが削除されること" do
+        repository.remove_tag(task, tag)
+        expect(task.tags).not_to include(tag)
+      end
+
+      it "TagTaskレコードが削除されること" do
+        expect {
+          repository.remove_tag(task, tag)
+        }.to change(TagTask, :count).by(-1)
+      end
+    end
+
+    context "タグが追加されていない場合" do
+      it "falseを返すこと" do
+        result = repository.remove_tag(task, tag)
+        expect(result).to be false
+      end
+
+      it "TagTaskレコードが変わらないこと" do
+        expect {
+          repository.remove_tag(task, tag)
+        }.not_to change(TagTask, :count)
+      end
+    end
+  end
 end
