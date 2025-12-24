@@ -148,8 +148,11 @@ RSpec.describe Api::TasksController, type: :controller do
 
   describe "GET #show" do
     before do
+      @admin = create(:account)
       @area = create(:area)
       @task = create(:task, area_id: @area.id)
+      token = JsonWebToken.encode({ account_id: @admin.id })
+      request.headers["Authorization"] = "Bearer #{token}"
     end
 
     context "存在するタスクの場合" do
@@ -164,12 +167,41 @@ RSpec.describe Api::TasksController, type: :controller do
         expect(json_response["id"]).to eq(@task.id)
         expect(json_response["task_title"]).to eq(@task.task_title)
       end
+
+      it "area_nameが返ってくること" do
+        get :show, params: { id: @task.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["area_name"]).to eq(@area.name)
+      end
     end
 
     context "存在しないタスクの場合" do
       it "Status 404が返ってくること" do
         get :show, params: { id: 999999 }
         expect(response).to have_http_status(:not_found)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        get :show, params: { id: 999999 }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("タスクが見つかりません")
+      end
+    end
+
+    context "認証なしの場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+
+      it "Status unauthorizedが返ってくること" do
+        get :show, params: { id: @task.id }
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        get :show, params: { id: @task.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("unauthorized")
       end
     end
   end

@@ -1,5 +1,5 @@
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :create]
+  before_action :authenticated?, only: [:index, :show, :create]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -10,9 +10,10 @@ class Api::TasksController < ApplicationController
   end
 
   def show
-    task = Task.find(params[:id])
-
-    render json: task
+    result = ::Services::Tasks::Show.new.call(show_params, @current_account)
+    render_result(result) do
+      ::Presenters::TaskPresenter.render_task(result.task)
+    end
   end
 
   def create
@@ -106,6 +107,10 @@ class Api::TasksController < ApplicationController
   private
     def index_params
       { type: params[:type] }
+    end
+
+    def show_params
+      { id: params[:id] }
     end
 
     def create_params

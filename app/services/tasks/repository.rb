@@ -5,6 +5,11 @@ module Services
         Task.new(attrs)
       end
 
+      # IDでタスクを取得
+      def find_by_id(id)
+        Task.find_by(id:)
+      end
+
       # タイトルからエリアを推論
       def infer_area_id(title)
         Area.get_area_id(title)
