@@ -30,7 +30,7 @@ class Task < ApplicationRecord
     return false if account.nil?
 
     # 単一クエリで現在の担当者IDを取得（N+1回避）
-    # get_account_assign_tasks と同じ条件でフィルタ
+    # アクティブサイクル内で ng=false, completed=false の最新履歴を持つアカウントを取得
     current_account_id = AssignHistory
       .joins(:assign_cycle)
       .where(assign_cycles: { task_id: id, is_active: true })

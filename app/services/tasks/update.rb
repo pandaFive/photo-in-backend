@@ -28,15 +28,20 @@ module Services
             return failure(nil, ["権限がありません"], :forbidden)
           end
 
-          # 更新実行
+          # 更新属性がない場合はスキップ
           return success(task) if update_attrs.empty?
 
+          # 更新実行
           unless @repository.update(task, update_attrs)
+            Rails.logger.warn "Task update failed: id=#{task.id}, errors=#{task.errors.full_messages.join(', ')}"
             return failure(task, task.errors.full_messages, :unprocessable_entity)
           end
 
           success(task)
         end
+      rescue ActiveRecord::Deadlocked, ActiveRecord::LockWaitTimeout => e
+        Rails.logger.error "Task update lock error: id=#{params[:id]}, error=#{e.message}"
+        failure(nil, ["サーバーが混雑しています。しばらくしてから再試行してください。"], :service_unavailable)
       end
 
       private
