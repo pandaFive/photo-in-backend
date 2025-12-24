@@ -50,6 +50,27 @@ module Services
       def list_ng_tasks
         Task.get_ng_tasks
       end
+
+      # タグをIDで取得
+      def find_tag(id)
+        Tag.find_by(id:)
+      end
+
+      # タスクにタグを追加
+      def add_tag(task, tag)
+        return false if task.tags.include?(tag)
+
+        task.tags << tag
+        true
+      end
+
+      # タスクからタグを削除
+      def remove_tag(task, tag)
+        return false unless task.tags.include?(tag)
+
+        task.tags.delete(tag)
+        true
+      end
     end
   end
 end
