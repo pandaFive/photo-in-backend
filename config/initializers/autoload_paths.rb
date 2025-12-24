@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Zeitwerk namespace mappings for non-standard directories
 module Validators; end
 module Policies; end

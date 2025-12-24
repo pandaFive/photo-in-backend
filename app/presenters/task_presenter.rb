@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Presenters
   class TaskPresenter
     def self.render_task(task)

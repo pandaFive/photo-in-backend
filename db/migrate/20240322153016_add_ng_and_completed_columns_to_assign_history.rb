@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddNgAndCompletedColumnsToAssignHistory < ActiveRecord::Migration[7.1]
   def change
     add_column :assign_histories, :ng, :boolean

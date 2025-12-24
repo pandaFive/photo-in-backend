@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Presenters
   class AccountPresenter
     def self.render_auth(account)

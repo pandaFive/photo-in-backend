@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AssignCycle < ApplicationRecord
   belongs_to :task
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Api::TagAccountsController < ApplicationController
   def create
     account = Account.find(params[:account_id])

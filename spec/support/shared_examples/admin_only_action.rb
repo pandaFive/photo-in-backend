@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.shared_examples "admin only service" do
   context "memberユーザーの場合" do
     it "forbiddenを返すこと" do

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddDefaultValuesToNgAndCompletedColumns < ActiveRecord::Migration[7.1]
   def change
     change_column_default :assign_histories, :ng, false

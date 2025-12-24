@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateAccountAreas < ActiveRecord::Migration[7.1]
   def change
     create_table :account_areas do |t|

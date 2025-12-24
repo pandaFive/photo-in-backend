@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Api::CommentsController < ApplicationController
   def index
     comments = Comment.get_member_comments(params[:taskId], params[:accountId])

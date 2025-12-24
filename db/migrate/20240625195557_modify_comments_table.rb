@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ModifyCommentsTable < ActiveRecord::Migration[7.1]
   def change
     remove_index :comments, :task_id

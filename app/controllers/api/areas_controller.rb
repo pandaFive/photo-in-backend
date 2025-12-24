@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Api::AreasController < ApplicationController
   def index
     areas = Area.get_all_area

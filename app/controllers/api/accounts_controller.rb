@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Api::AccountsController < ApplicationController
   before_action :authenticated?, only: [:get, :create, :show, :index, :update, :destroy]
 
