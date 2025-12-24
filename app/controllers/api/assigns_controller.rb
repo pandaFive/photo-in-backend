@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Api::AssignsController < ApplicationController
   # TODO: indexメソッドの実装が必要な場合は追加してください
   # 現在はcycle_createのみが使用されています

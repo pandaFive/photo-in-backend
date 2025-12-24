@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe Api::TasksController, type: :controller do
@@ -223,21 +225,88 @@ RSpec.describe Api::TasksController, type: :controller do
 
   describe "DELETE #destroy" do
     before do
+      @admin = create(:account)
+      @member = create(:account_member)
       @area = create(:area)
       @task = create(:task, area_id: @area.id)
     end
 
-    context "削除が成功した場合" do
-      it "Status 204が返ってくること" do
+    context "管理者が削除する場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ってくること" do
         delete :destroy, params: { id: @task.id }
-        expect(response).to have_http_status(204)
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "正しいメッセージが返ってくること" do
+        delete :destroy, params: { id: @task.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["message"]).to eq("deleted")
+      end
+
+      it "タスクがDBから削除されること" do
+        expect {
+          delete :destroy, params: { id: @task.id }
+        }.to change(Task, :count).by(-1)
+      end
+    end
+
+    context "メンバーが削除しようとする場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status forbiddenが返ってくること" do
+        delete :destroy, params: { id: @task.id }
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        delete :destroy, params: { id: @task.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("権限がありません")
+      end
+
+      it "タスクが削除されないこと" do
+        expect {
+          delete :destroy, params: { id: @task.id }
+        }.not_to change(Task, :count)
       end
     end
 
     context "存在しないtaskのidが指定された場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
       it "Status 404が返ってくること" do
         delete :destroy, params: { id: 9999 }
         expect(response).to have_http_status(:not_found)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        delete :destroy, params: { id: 9999 }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("タスクが見つかりません")
+      end
+    end
+
+    context "認証なしの場合" do
+      it "Status unauthorizedが返ってくること" do
+        delete :destroy, params: { id: @task.id }
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        delete :destroy, params: { id: @task.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("unauthorized")
       end
     end
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Policies
   class AccountPolicy
     def initialize(account)

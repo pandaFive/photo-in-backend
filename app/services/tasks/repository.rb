@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Services
   module Tasks
     class Repository
@@ -32,6 +34,11 @@ module Services
       # タスクを更新
       def update(task, attrs)
         task.update(attrs)
+      end
+
+      # タスクを削除
+      def delete(task)
+        task.destroy
       end
 
       # アクティブなタスク一覧を取得

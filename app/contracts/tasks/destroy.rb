@@ -2,18 +2,17 @@
 
 module Contracts
   module Tasks
-    class Create
+    # タスク削除の入力検証
+    class Destroy
       include ActiveModel::Model
 
-      attr_accessor :task_title, :area_id
+      attr_accessor :id
 
-      validates :task_title, presence: true, length: { maximum: 256 }
+      validates :id, presence: true
+      validates :id, numericality: { only_integer: true, greater_than: 0 }, if: -> { id.present? }
 
       def self.call(params)
-        contract = new(
-          task_title: params[:task_title],
-          area_id: params[:area_id]
-        )
+        contract = new(id: params[:id])
 
         if contract.valid?
           Result.new(success?: true, value: contract.normalized_attributes, errors: [])
@@ -23,10 +22,7 @@ module Contracts
       end
 
       def normalized_attributes
-        {
-          task_title:,
-          area_id: area_id.present? ? area_id.to_i : nil
-        }
+        { id: id.to_i }
       end
     end
   end

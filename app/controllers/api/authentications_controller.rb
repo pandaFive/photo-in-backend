@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Api::AuthenticationsController < ApplicationController
   def login
     result = ::Services::Authentications::Login.new.call(login_params.to_h.symbolize_keys)

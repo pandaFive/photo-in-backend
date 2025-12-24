@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 areas = ["八王子", "町田", "昭島", "厚木", "横浜", "日野"]
 areas.each do |ele|
   Area.create(name: ele)
