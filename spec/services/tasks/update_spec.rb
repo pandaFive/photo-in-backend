@@ -224,13 +224,13 @@ RSpec.describe Services::Tasks::Update, type: :service do
         let(:params) { { id: "1", task_title: "更新" } }
 
         before do
-          allow(mock_repository).to receive(:find_by_id).with(1).and_return(task)
+          allow(mock_repository).to receive(:find_by_id_with_lock).with(1).and_return(task)
           allow(mock_repository).to receive(:update).with(task, { task_title: "更新" }).and_return(true)
         end
 
-        it "指定されたリポジトリのfind_by_idを呼び出すこと" do
+        it "指定されたリポジトリのfind_by_id_with_lockを呼び出すこと" do
           service.call(params, admin_account)
-          expect(mock_repository).to have_received(:find_by_id).with(1)
+          expect(mock_repository).to have_received(:find_by_id_with_lock).with(1)
         end
 
         it "指定されたリポジトリのupdateを呼び出すこと" do
@@ -239,7 +239,7 @@ RSpec.describe Services::Tasks::Update, type: :service do
         end
 
         it "リポジトリがnilを返した場合はnot_foundを返すこと" do
-          allow(mock_repository).to receive(:find_by_id).with(1).and_return(nil)
+          allow(mock_repository).to receive(:find_by_id_with_lock).with(1).and_return(nil)
           result = service.call(params, admin_account)
           expect(result.success?).to be false
           expect(result.status).to eq(:not_found)
