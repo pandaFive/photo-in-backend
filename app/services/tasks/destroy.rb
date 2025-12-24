@@ -24,9 +24,18 @@ module Services
         return failure(["タスクが見つかりません"], :not_found) if task.nil?
 
         # 削除実行
-        deleted = @repository.delete(task)
-        return failure(["タスクの削除に失敗しました"], :unprocessable_entity) unless deleted
+        begin
+          deleted = @repository.delete(task)
+          unless deleted
+            Rails.logger.warn "Task destroy callback blocked: id=#{task.id}, account=#{current_account.id}"
+            return failure(["タスクの削除に失敗しました"], :unprocessable_entity)
+          end
+        rescue ActiveRecord::InvalidForeignKey => e
+          Rails.logger.error "Task destroy FK violation: id=#{task.id}, account=#{current_account.id}, error=#{e.message}"
+          return failure(["関連データが存在するため削除できません"], :conflict)
+        end
 
+        Rails.logger.info "Task destroyed: id=#{task.id}, title=#{task.task_title}, by_account=#{current_account.id}"
         success
       end
 

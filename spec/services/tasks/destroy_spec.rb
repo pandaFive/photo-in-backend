@@ -178,17 +178,24 @@ RSpec.describe Services::Tasks::Destroy, type: :service do
     describe "関連データの処理" do
       let!(:assign_cycle) { create(:assign_cycle, task: target_task) }
 
-      it "関連AssignCycleがある場合、ForeignKeyViolationエラーになること" do
-        # 外部キー制約エラーを処理しないため、例外が発生する
-        expect {
-          described_class.new.call(valid_params, admin)
-        }.to raise_error(ActiveRecord::InvalidForeignKey)
+      it "関連AssignCycleがある場合、conflictを返すこと" do
+        result = described_class.new.call(valid_params, admin)
+
+        expect(result.success?).to be false
+        expect(result.status).to eq(:conflict)
+        expect(result.errors).to include("関連データが存在するため削除できません")
       end
 
       it "エラー発生時にタスクが削除されないこと" do
         expect {
-          described_class.new.call(valid_params, admin) rescue nil
+          described_class.new.call(valid_params, admin)
         }.not_to change(Task, :count)
+      end
+
+      it "例外が発生しないこと" do
+        expect {
+          described_class.new.call(valid_params, admin)
+        }.not_to raise_error
       end
     end
   end
