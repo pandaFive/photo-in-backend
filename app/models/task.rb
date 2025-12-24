@@ -25,9 +25,19 @@ class Task < ApplicationRecord
   end
 
   # 指定されたアカウントが現在のタスク担当者かどうかを判定
+  # 最新のAssignCycleの最新のAssignHistoryのaccount_idと比較
   def current_assignee?(account)
-    current_history = assign_cycles.order(:id).last&.assign_histories&.order(:id)&.last
-    current_history&.account_id == account.id
+    return false if account.nil?
+
+    # 単一クエリで最新の担当者IDを取得（N+1回避）
+    current_account_id = AssignHistory
+      .joins(:assign_cycle)
+      .where(assign_cycles: { task_id: id })
+      .order("assign_cycles.id DESC, assign_histories.id DESC")
+      .limit(1)
+      .pick(:account_id)
+
+    current_account_id == account.id
   end
 
   class << self
