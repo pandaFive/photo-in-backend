@@ -31,7 +31,12 @@ module Services
         return failure(["タグが見つかりません"], :not_found) if tag.nil?
 
         # タグ削除（冪等: 存在しない場合はスキップ）
-        @repository.remove_tag(task, tag)
+        removed = @repository.remove_tag(task, tag)
+        if removed
+          Rails.logger.info "Tag removed: task_id=#{task.id}, tag_id=#{tag.id}, by_account=#{current_account.id}"
+        else
+          Rails.logger.info "Tag not associated (no-op): task_id=#{task.id}, tag_id=#{tag.id}"
+        end
 
         success(task)
       end

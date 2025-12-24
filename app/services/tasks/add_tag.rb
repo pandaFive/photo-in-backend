@@ -31,7 +31,12 @@ module Services
         return failure(["タグが見つかりません"], :not_found) if tag.nil?
 
         # タグ追加（冪等: 既に存在する場合はスキップ）
-        @repository.add_tag(task, tag)
+        added = @repository.add_tag(task, tag)
+        if added
+          Rails.logger.info "Tag added: task_id=#{task.id}, tag_id=#{tag.id}, by_account=#{current_account.id}"
+        else
+          Rails.logger.info "Tag already exists (no-op): task_id=#{task.id}, tag_id=#{tag.id}"
+        end
 
         success(task)
       end

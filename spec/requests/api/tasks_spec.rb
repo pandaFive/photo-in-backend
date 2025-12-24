@@ -480,6 +480,13 @@ RSpec.describe Api::TasksController, type: :controller do
           expect(response).to have_http_status(:not_found)
         end
       end
+
+      context "存在しないタグの場合" do
+        it "Status 404が返ってくること" do
+          delete :remove_tag, params: { id: @task.id, tag_id: 999999 }
+          expect(response).to have_http_status(:not_found)
+        end
+      end
     end
 
     context "認証なしの場合" do
