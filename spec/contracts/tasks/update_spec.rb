@@ -220,6 +220,45 @@ RSpec.describe Contracts::Tasks::Update do
         end
       end
     end
+
+    context "セキュリティ：非スカラー値の拒否" do
+      context "task_titleが配列の場合" do
+        let(:params) { { id: "1", task_title: ["a" * 100, "b" * 100, "c" * 100] } }
+
+        it "success?がfalseを返すこと" do
+          result = described_class.call(params)
+          expect(result.success?).to be false
+        end
+
+        it "errorsにtask_titleのエラーが含まれること" do
+          result = described_class.call(params)
+          expect(result.errors.first).to include("文字列である必要があります")
+        end
+      end
+
+      context "task_titleがハッシュの場合" do
+        let(:params) { { id: "1", task_title: { key: "value" } } }
+
+        it "success?がfalseを返すこと" do
+          result = described_class.call(params)
+          expect(result.success?).to be false
+        end
+
+        it "errorsにtask_titleのエラーが含まれること" do
+          result = described_class.call(params)
+          expect(result.errors.first).to include("文字列である必要があります")
+        end
+      end
+
+      context "task_titleが数値の場合" do
+        let(:params) { { id: "1", task_title: 12345 } }
+
+        it "success?がfalseを返すこと" do
+          result = described_class.call(params)
+          expect(result.success?).to be false
+        end
+      end
+    end
   end
 
   describe "#normalized_attributes" do
