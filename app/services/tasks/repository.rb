@@ -34,6 +34,11 @@ module Services
         task.update(attrs)
       end
 
+      # タスクを削除
+      def delete(task)
+        task.destroy
+      end
+
       # アクティブなタスク一覧を取得
       def list_active_tasks
         Task.get_active_tasks
