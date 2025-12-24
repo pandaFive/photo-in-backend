@@ -10,6 +10,11 @@ module Services
         Task.find_by(id:)
       end
 
+      # IDでタスクを取得（悲観的ロック付き - レースコンディション防止）
+      def find_by_id_with_lock(id)
+        Task.lock.find_by(id:)
+      end
+
       # タイトルからエリアを推論
       def infer_area_id(title)
         Area.get_area_id(title)
@@ -22,6 +27,11 @@ module Services
 
       def save(task)
         task.save
+      end
+
+      # タスクを更新
+      def update(task, attrs)
+        task.update(attrs)
       end
 
       # アクティブなタスク一覧を取得
