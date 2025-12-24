@@ -24,7 +24,7 @@ Controller → Contract → Service → Repository → Model
 |--------------|---------|-------|------|
 | Accounts | 6/6 | 0 | ✅ 完了 |
 | Authentications | 1/1 | 0 | ✅ 完了 |
-| Tasks | 7/12 | 5 | 🔶 進行中 |
+| Tasks | 8/12 | 4 | 🔶 進行中 |
 | Areas | 0/5 | 5 | ⬜ 未着手 |
 | Comments | 0/5 | 5 | ⬜ 未着手 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
@@ -32,7 +32,7 @@ Controller → Contract → Service → Repository → Model
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 14/38 (37%)**
+**合計: 15/38 (39%)**
 
 ---
 
@@ -71,13 +71,13 @@ Controller → Contract → Service → Repository → Model
   - Service: `Services::Tasks::RemoveTag`
   - Repository: `remove_tag`追加
   - 認証必須化、認可追加（admin_only）
-
-### 未移行
-
-- [ ] `PUT /api/tasks/:id/completed` (completed)
+- [x] `PUT /api/tasks/:id/completed` (completed)
   - Contract: `Contracts::Tasks::Completed`
   - Service: `Services::Tasks::Completed`
-  - Note: AssignHistory操作
+  - Repository: `find_assign_history_with_lock`, `complete_assign_history`, `deactivate_cycle`追加
+  - 認証必須化、認可追加（admin + 担当者）
+
+### 未移行
 
 - [ ] `PUT /api/tasks/:id/ng` (ng)
   - Contract: `Contracts::Tasks::Ng`

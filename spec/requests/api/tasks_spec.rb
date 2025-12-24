@@ -515,14 +515,28 @@ RSpec.describe Api::TasksController, type: :controller do
 
   describe "PUT #completed" do
     before do
+      @admin = create(:account)
       @member = create(:account_member)
+      @other_member = create(:account_member)
       @area = create(:area)
       @task = create(:task, area_id: @area.id)
-      @cycle = create(:assign_cycle, task_id: @task.id)
-      @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, completed: false)
+      @cycle = create(:assign_cycle, task_id: @task.id, is_active: true)
+      @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, completed: false, ng: false)
     end
 
-    context "有効なパラメータの場合" do
+    context "認証なしの場合" do
+      it "Status 401が返ってくること" do
+        put :completed, params: { id: @history.id }
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context "管理者が完了する場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
       it "Status 200が返ってくること" do
         put :completed, params: { id: @history.id }
         expect(response).to have_http_status(:ok)
@@ -533,12 +547,98 @@ RSpec.describe Api::TasksController, type: :controller do
         json_response = JSON.parse(response.body)
         expect(json_response["result"]).to be true
       end
+
+      it "正しいメッセージが返ってくること" do
+        put :completed, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["message"]).to eq("change completed")
+      end
+
+      it "AssignHistoryのcompletedがtrueに更新されること" do
+        put :completed, params: { id: @history.id }
+        expect(@history.reload.completed).to be true
+      end
+
+      it "AssignCycleのis_activeがfalseに更新されること" do
+        put :completed, params: { id: @history.id }
+        expect(@cycle.reload.is_active).to be false
+      end
+    end
+
+    context "担当メンバーが自分のタスクを完了する場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ってくること" do
+        put :completed, params: { id: @history.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "AssignHistoryのcompletedがtrueに更新されること" do
+        put :completed, params: { id: @history.id }
+        expect(@history.reload.completed).to be true
+      end
+    end
+
+    context "非担当メンバーが完了しようとする場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @other_member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status forbiddenが返ってくること" do
+        put :completed, params: { id: @history.id }
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :completed, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("権限がありません")
+      end
+
+      it "AssignHistoryが更新されないこと" do
+        put :completed, params: { id: @history.id }
+        expect(@history.reload.completed).to be false
+      end
     end
 
     context "存在しないAssignHistoryの場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
       it "Status 404が返ってくること" do
         put :completed, params: { id: 999999 }
         expect(response).to have_http_status(:not_found)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :completed, params: { id: 999999 }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("担当履歴が見つかりません")
+      end
+    end
+
+    context "既に完了済みの場合" do
+      before do
+        @history.update(completed: true)
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status unprocessable_entityが返ってくること" do
+        put :completed, params: { id: @history.id }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :completed, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("既に完了しています")
       end
     end
   end

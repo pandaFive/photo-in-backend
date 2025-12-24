@@ -71,6 +71,21 @@ module Services
         task.tags.delete(tag)
         true
       end
+
+      # AssignHistoryをIDで取得（悲観的ロック付き）
+      def find_assign_history_with_lock(id)
+        AssignHistory.lock.find_by(id:)
+      end
+
+      # AssignHistoryの完了処理
+      def complete_assign_history(assign_history)
+        assign_history.update(completed: true, completed_at: Time.current)
+      end
+
+      # AssignCycleの非アクティブ化
+      def deactivate_cycle(cycle)
+        cycle.update(is_active: false)
+      end
     end
   end
 end
