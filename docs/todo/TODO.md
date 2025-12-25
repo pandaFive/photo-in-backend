@@ -24,7 +24,7 @@ Controller → Contract → Service → Repository → Model
 |--------------|---------|-------|------|
 | Accounts | 6/6 | 0 | ✅ 完了 |
 | Authentications | 1/1 | 0 | ✅ 完了 |
-| Tasks | 11/12 | 1 | 🔶 進行中 |
+| Tasks | 12/13 | 1 | 🔶 進行中 |
 | Areas | 0/5 | 5 | ⬜ 未着手 |
 | Comments | 0/5 | 5 | ⬜ 未着手 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
@@ -32,7 +32,7 @@ Controller → Contract → Service → Repository → Model
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 18/38 (47%)**
+**合計: 19/39 (49%)**
 
 ---
 
@@ -95,11 +95,14 @@ Controller → Contract → Service → Repository → Model
   - Note: Contractなし（パラメータなし）
   - 認証必須化
 
-### 未移行
-
-- [ ] `GET /api/completed-data` (get_complete_data)
+- [x] `GET /api/completed-data` (get_complete_data)
   - Service: `Services::Tasks::GetCompleteData`
+  - Repository: `get_completed_past_week`追加
   - Note: Contractなし（パラメータなし）
+  - 認証必須化
+  - DBエラーハンドリング追加
+
+### 未移行
 
 - [ ] `GET /api/account/tasks` (get_account_task)
   - Contract: `Contracts::Tasks::GetAccountTask`
@@ -211,6 +214,7 @@ Controller → Contract → Service → Repository → Model
 | `DELETE /api/tasks/:id` | 認証必須化、認可追加(admin_only)、レスポンス: 204→200+message | - |
 | `PUT /api/tasks/:id/ng` | 認証必須化、認可追加(admin+担当者)、errors追加 | - |
 | `GET /api/unfulfilled-count` | 認証必須化 | - |
+| `GET /api/completed-data` | 認証必須化 | - |
 
 ---
 
