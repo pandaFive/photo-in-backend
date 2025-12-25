@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Area < ApplicationRecord
-  validates :name, presence: true, length: { maximum: 32 }
+  validates :name, presence: true, length: { maximum: 32 }, uniqueness: true
 
   has_many :account_areas
   has_many :accounts, through: :account_areas

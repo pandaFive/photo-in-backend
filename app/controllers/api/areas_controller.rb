@@ -1,43 +1,47 @@
 # frozen_string_literal: true
 
 class Api::AreasController < ApplicationController
-  def index
-    areas = Area.get_all_area
+  before_action :authenticated?
 
-    render json: areas
+  def index
+    result = ::Services::Areas::Index.new.call(@current_account)
+    render_result(result) { ::Presenters::AreaPresenter.render_areas(result.areas) }
   end
 
   def show
-    area = Area.find(params[:id])
-
-    render json: area
+    result = ::Services::Areas::Show.new.call(show_params, @current_account)
+    render_result(result) { ::Presenters::AreaPresenter.render_area(result.area) }
   end
 
   def create
-    area = Area.new(create_params)
-
-    if area.save
-      render json: area
-    else
-      render json: { message: area.errors, status: 422 }, status: :unprocessable_entity
-    end
+    result = ::Services::Areas::Create.new.call(create_params, @current_account)
+    render_result(result) { ::Presenters::AreaPresenter.render_area(result.area) }
   end
 
   def update
-    area = Area.find(params[:id])
-    area.update(create_params)
-
-    render json: area
+    result = ::Services::Areas::Update.new.call(update_params, @current_account)
+    render_result(result) { ::Presenters::AreaPresenter.render_area(result.area) }
   end
 
   def destroy
-    area = Area.find(params[:id])
-
-    area.destroy
+    result = ::Services::Areas::Destroy.new.call(destroy_params, @current_account)
+    render_result(result) { { message: result.message } }
   end
 
   private
+    def show_params
+      { id: params[:id] }
+    end
+
     def create_params
-      params.require(:area).permit(:name)
+      { area: params.require(:area).permit(:name) }
+    end
+
+    def update_params
+      { id: params[:id], area: params.require(:area).permit(:name) }
+    end
+
+    def destroy_params
+      { id: params[:id] }
     end
 end
