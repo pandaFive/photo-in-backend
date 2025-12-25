@@ -83,6 +83,7 @@ class Api::TasksController < ApplicationController
     if result.success?
       render json: result.count, status: result.status
     else
+      Rails.logger.warn(message: "UnfulfilledsCount failed", errors: result.errors, account_id: @current_account&.id)
       render_error(result.errors, result.status)
     end
   end

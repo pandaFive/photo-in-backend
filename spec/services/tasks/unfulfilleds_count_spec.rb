@@ -78,6 +78,52 @@ RSpec.describe Services::Tasks::UnfulfilledsCount, type: :service do
         expect(result.count).to eq(0)
       end
     end
+
+    context "データベース接続エラーの場合" do
+      before do
+        allow(repository).to receive(:count_unfulfilleds).and_raise(ActiveRecord::ConnectionNotEstablished)
+        allow(Rails.logger).to receive(:error)
+      end
+
+      it "失敗を返すこと" do
+        result = service.call(admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq(:service_unavailable)
+      end
+
+      it "エラーメッセージを返すこと" do
+        result = service.call(admin)
+        expect(result.errors).to include("データベース接続に失敗しました。しばらくしてから再試行してください。")
+      end
+
+      it "エラーをログに記録すること" do
+        service.call(admin)
+        expect(Rails.logger).to have_received(:error).with(hash_including(message: "データベース接続失敗"))
+      end
+    end
+
+    context "データベースクエリエラーの場合" do
+      before do
+        allow(repository).to receive(:count_unfulfilleds).and_raise(ActiveRecord::StatementInvalid.new("query error"))
+        allow(Rails.logger).to receive(:error)
+      end
+
+      it "失敗を返すこと" do
+        result = service.call(admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq(:internal_server_error)
+      end
+
+      it "エラーメッセージを返すこと" do
+        result = service.call(admin)
+        expect(result.errors).to include("データの取得に失敗しました。")
+      end
+
+      it "エラーをログに記録すること" do
+        service.call(admin)
+        expect(Rails.logger).to have_received(:error).with(hash_including(message: "データベースクエリ失敗"))
+      end
+    end
   end
 
   describe "依存性注入" do

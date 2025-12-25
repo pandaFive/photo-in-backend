@@ -463,5 +463,17 @@ RSpec.describe Services::Tasks::Repository, type: :service do
         expect(result).to eq(1)
       end
     end
+
+    context "複数タスクにアクティブサイクルがある場合" do
+      let!(:task2) { create(:task, area:) }
+      let!(:cycle1) { create(:assign_cycle, task:, is_active: true) }
+      let!(:cycle2) { create(:assign_cycle, task: task2, is_active: true) }
+      let!(:cycle3) { create(:assign_cycle, task: task2, is_active: false) }
+
+      it "全タスクのアクティブサイクル合計を返すこと" do
+        result = repository.count_unfulfilleds
+        expect(result).to eq(2)
+      end
+    end
   end
 end
