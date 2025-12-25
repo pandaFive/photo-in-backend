@@ -34,6 +34,7 @@ module Services
           return failure(account, account.errors.full_messages, :unprocessable_entity)
         end
 
+        Rails.logger.info "Account updated: id=#{account.id}, attrs=#{update_attrs.keys.join(',')}, by_account=#{current_account.id}"
         Result.new(success?: true, account:, errors: [], status: :ok)
       end
 

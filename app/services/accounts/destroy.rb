@@ -28,10 +28,13 @@ module Services
         return failure(["ID'#{value[:id]}'のアカウントは存在しません"], :not_found) unless account
 
         # 削除実行
+        account_id = account.id
+        account_name = account.name
         unless @repository.destroy(account)
           return failure(account.errors.full_messages, :unprocessable_entity)
         end
 
+        Rails.logger.info "Account destroyed: id=#{account_id}, name=#{account_name}, by_account=#{current_account.id}"
         Result.new(success?: true, message: "deleted", errors: [], status: :ok)
       end
 

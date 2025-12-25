@@ -46,6 +46,7 @@ module Services
 
         return failure(account, account.errors.full_messages, :unprocessable_entity) unless saved
 
+        Rails.logger.info "Account created: id=#{account.id}, name=#{account.name}, role=#{account.role}, by_account=#{current_account.id}"
         Result.new(success?: true, account:, errors: [], status: :created)
       end
 
