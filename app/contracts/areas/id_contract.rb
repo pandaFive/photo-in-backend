@@ -2,6 +2,12 @@
 
 module Contracts
   module Areas
+    # エリアID検証用の基底コントラクト
+    #
+    # 検証ルール:
+    # - id: 必須、正の整数のみ
+    #
+    # Show, Destroy コントラクトの親クラスとして使用
     class IdContract
       include ActiveModel::Model
 

@@ -27,7 +27,10 @@ module Services
 
         Area.transaction do
           area = @repository.find_by_id_with_lock(value[:id])
-          return failure(["ID'#{value[:id]}'のエリアは存在しません"], :not_found) unless area
+          unless area
+            Rails.logger.warn "Area not found during update: id=#{value[:id]}, by_account=#{current_account.id}"
+            return failure(["ID'#{value[:id]}'のエリアは存在しません"], :not_found)
+          end
 
           unless @repository.update(area, update_attrs)
             Rails.logger.warn "Area update failed: id=#{area.id}, errors=#{area.errors.full_messages.join(', ')}"

@@ -2,6 +2,13 @@
 
 module Contracts
   module Areas
+    # エリア作成用コントラクト
+    #
+    # 検証ルール:
+    # - name: 必須、最大32文字
+    #
+    # パラメータ形式:
+    # - { name: "..." } または { area: { name: "..." } }
     class Create
       include ActiveModel::Model
 

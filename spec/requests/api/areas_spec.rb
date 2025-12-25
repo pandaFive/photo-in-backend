@@ -80,6 +80,13 @@ RSpec.describe "Api::Areas", type: :request do
           expect(response).to have_http_status(:not_found)
         end
       end
+
+      context "無効なIDフォーマットの場合" do
+        it "文字列IDでStatus 422が返ってくること" do
+          get "/api/areas/abc", headers: admin_headers
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+      end
     end
 
     context "未認証の場合" do
@@ -183,6 +190,20 @@ RSpec.describe "Api::Areas", type: :request do
           expect(response).to have_http_status(:not_found)
         end
       end
+
+      context "無効なIDフォーマットの場合" do
+        it "文字列IDでStatus 422が返ってくること" do
+          put "/api/areas/abc", params: { area: { name: "更新" } }, headers: admin_headers
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+      end
+
+      context "無効なパラメータの場合" do
+        it "nameが32文字を超える場合、Status 422が返ってくること" do
+          put "/api/areas/#{@area.id}", params: { area: { name: "a" * 33 } }, headers: admin_headers
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+      end
     end
 
     context "memberユーザーの場合" do
@@ -235,6 +256,13 @@ RSpec.describe "Api::Areas", type: :request do
         it "Status 404が返ってくること" do
           delete "/api/areas/999999", headers: admin_headers
           expect(response).to have_http_status(:not_found)
+        end
+      end
+
+      context "無効なIDフォーマットの場合" do
+        it "文字列IDでStatus 422が返ってくること" do
+          delete "/api/areas/abc", headers: admin_headers
+          expect(response).to have_http_status(:unprocessable_entity)
         end
       end
 

@@ -113,6 +113,22 @@ RSpec.describe Services::Areas::Destroy, type: :service do
         end
       end
 
+      context "デッドロックが発生した場合" do
+        let(:mock_repository) { instance_double(Services::Areas::Repository) }
+
+        before do
+          allow(mock_repository).to receive(:find_by_id_with_lock).and_raise(ActiveRecord::Deadlocked)
+        end
+
+        it "service_unavailableを返すこと" do
+          result = described_class.new(repository: mock_repository).call(valid_params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:service_unavailable)
+          expect(result.errors.first).to include("混雑")
+        end
+      end
+
       context "データベースエラーが発生した場合" do
         let(:mock_repository) { instance_double(Services::Areas::Repository) }
 

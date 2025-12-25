@@ -2,6 +2,16 @@
 
 module Contracts
   module Areas
+    # エリア更新用コントラクト
+    #
+    # 検証ルール:
+    # - id: 必須、正の整数のみ
+    # - name: 任意、最大32文字
+    #
+    # パラメータ形式:
+    # - { id: ..., name: "..." } または { id: ..., area: { name: "..." } }
+    #
+    # 注意: name が nil の場合、更新対象から除外される（既存値を維持）
     class Update
       include ActiveModel::Model
 

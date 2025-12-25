@@ -26,7 +26,10 @@ module Services
 
         Area.transaction do
           area = @repository.find_by_id_with_lock(area_id)
-          return failure(["ID'#{area_id}'のエリアは存在しません"], :not_found) unless area
+          unless area
+            Rails.logger.warn "Area not found during destroy: id=#{area_id}, by_account=#{current_account.id}"
+            return failure(["ID'#{area_id}'のエリアは存在しません"], :not_found)
+          end
 
           unless @repository.destroy(area)
             Rails.logger.error "Area destroy failed (callbacks): id=#{area.id}, errors=#{area.errors.full_messages.join(', ')}"

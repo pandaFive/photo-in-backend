@@ -17,7 +17,10 @@ module Services
         end
 
         area = @repository.find_by_id(validation.value[:id])
-        return failure(["ID'#{validation.value[:id]}'のエリアは存在しません"], :not_found) unless area
+        unless area
+          Rails.logger.warn "Area not found: id=#{validation.value[:id]}, requested_by=#{current_account.id}"
+          return failure(["ID'#{validation.value[:id]}'のエリアは存在しません"], :not_found)
+        end
 
         Result.new(success?: true, area:, errors: [], status: :ok)
       rescue ActiveRecord::StatementInvalid => e
