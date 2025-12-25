@@ -201,6 +201,78 @@ RSpec.describe Services::Tasks::Completed, type: :service do
           expect(result.errors).to include("既に完了しています")
         end
       end
+
+      context "ロック例外が発生する場合" do
+        let!(:assign_history) { assign_to_member(task, member) }
+
+        context "Deadlockedが発生する場合" do
+          before do
+            allow(AssignHistory).to receive(:transaction).and_raise(ActiveRecord::Deadlocked.new("deadlock detected"))
+          end
+
+          it "success?がfalseを返すこと" do
+            result = described_class.new.call({ id: assign_history.id }, admin)
+            expect(result.success?).to be false
+          end
+
+          it "statusが:service_unavailableであること" do
+            result = described_class.new.call({ id: assign_history.id }, admin)
+            expect(result.status).to eq(:service_unavailable)
+          end
+
+          it "混雑エラーメッセージを返すこと" do
+            result = described_class.new.call({ id: assign_history.id }, admin)
+            expect(result.errors).to include("サーバーが混雑しています。しばらくしてから再試行してください。")
+          end
+        end
+
+        context "LockWaitTimeoutが発生する場合" do
+          before do
+            allow(AssignHistory).to receive(:transaction).and_raise(ActiveRecord::LockWaitTimeout.new("lock wait timeout"))
+          end
+
+          it "success?がfalseを返すこと" do
+            result = described_class.new.call({ id: assign_history.id }, admin)
+            expect(result.success?).to be false
+          end
+
+          it "statusが:service_unavailableであること" do
+            result = described_class.new.call({ id: assign_history.id }, admin)
+            expect(result.status).to eq(:service_unavailable)
+          end
+
+          it "混雑エラーメッセージを返すこと" do
+            result = described_class.new.call({ id: assign_history.id }, admin)
+            expect(result.errors).to include("サーバーが混雑しています。しばらくしてから再試行してください。")
+          end
+        end
+      end
+
+      context "保存エラーが発生する場合" do
+        let!(:assign_history) { assign_to_member(task, member) }
+        let(:mock_repository) { instance_double(Services::Tasks::Repository) }
+        let(:service) { described_class.new(repository: mock_repository) }
+
+        before do
+          allow(mock_repository).to receive(:find_assign_history_with_lock).with(assign_history.id).and_return(assign_history)
+          allow(mock_repository).to receive(:complete_assign_history).with(assign_history).and_raise(ActiveRecord::RecordInvalid.new(assign_history))
+        end
+
+        it "success?がfalseを返すこと" do
+          result = service.call({ id: assign_history.id }, admin)
+          expect(result.success?).to be false
+        end
+
+        it "statusが:unprocessable_entityであること" do
+          result = service.call({ id: assign_history.id }, admin)
+          expect(result.status).to eq(:unprocessable_entity)
+        end
+
+        it "保存失敗エラーメッセージを返すこと" do
+          result = service.call({ id: assign_history.id }, admin)
+          expect(result.errors).to include("タスクの完了処理に失敗しました。")
+        end
+      end
     end
 
     describe "処理順序の検証" do

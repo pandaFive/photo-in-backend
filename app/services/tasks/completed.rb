@@ -45,6 +45,9 @@ module Services
       rescue ActiveRecord::Deadlocked, ActiveRecord::LockWaitTimeout => e
         Rails.logger.error "Task complete lock error: id=#{params[:id]}, error=#{e.message}"
         failure(["サーバーが混雑しています。しばらくしてから再試行してください。"], :service_unavailable)
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error "Task complete save error: id=#{params[:id]}, error=#{e.message}"
+        failure(["タスクの完了処理に失敗しました。"], :unprocessable_entity)
       end
 
       private

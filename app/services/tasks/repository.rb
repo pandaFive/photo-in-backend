@@ -72,19 +72,21 @@ module Services
         true
       end
 
-      # AssignHistoryをIDで取得（悲観的ロック付き）
+      # AssignHistoryをIDで取得（悲観的ロック付き - 同時完了操作によるレースコンディション防止）
       def find_assign_history_with_lock(id)
         AssignHistory.lock.find_by(id:)
       end
 
       # AssignHistoryの完了処理
+      # @raise [ActiveRecord::RecordInvalid] バリデーション失敗時
       def complete_assign_history(assign_history)
-        assign_history.update(completed: true, completed_at: Time.current)
+        assign_history.update!(completed: true, completed_at: Time.current)
       end
 
       # AssignCycleの非アクティブ化
+      # @raise [ActiveRecord::RecordInvalid] バリデーション失敗時
       def deactivate_cycle(cycle)
-        cycle.update(is_active: false)
+        cycle.update!(is_active: false)
       end
     end
   end
