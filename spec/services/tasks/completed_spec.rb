@@ -273,6 +273,27 @@ RSpec.describe Services::Tasks::Completed, type: :service do
           expect(result.errors).to include("タスクの完了処理に失敗しました。")
         end
       end
+
+      context "deactivate_cycleが失敗した場合のトランザクションロールバック" do
+        let!(:assign_history) { assign_to_member(task, member) }
+
+        it "AssignHistoryの変更がロールバックされること" do
+          # deactivate_cycleで例外を発生させる
+          allow_any_instance_of(AssignCycle).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(task))
+
+          expect {
+            described_class.new.call({ id: assign_history.id }, admin)
+          }.not_to change { assign_history.reload.completed }
+        end
+
+        it "AssignCycleがアクティブのままであること" do
+          allow_any_instance_of(AssignCycle).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(task))
+
+          expect {
+            described_class.new.call({ id: assign_history.id }, admin)
+          }.not_to change { assign_history.assign_cycle.reload.is_active }
+        end
+      end
     end
 
     describe "処理順序の検証" do

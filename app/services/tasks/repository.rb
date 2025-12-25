@@ -77,7 +77,7 @@ module Services
         AssignHistory.lock.find_by(id:)
       end
 
-      # AssignHistoryの完了処理
+      # AssignHistoryの完了処理（Service層からの呼び出し用）
       # @raise [ActiveRecord::RecordInvalid] バリデーション失敗時
       def complete_assign_history(assign_history)
         assign_history.update!(completed: true, completed_at: Time.current)

@@ -3,7 +3,7 @@
 module Contracts
   module Tasks
     # タスク完了の入力検証
-    # Note: idはAssignHistoryのID
+    # Note: idはAssignHistoryのID（APIパス /tasks/:id/completed の :id は歴史的経緯による命名）
     class Completed
       include ActiveModel::Model
 

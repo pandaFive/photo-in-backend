@@ -25,7 +25,7 @@ module Services
           # 関連するTaskを取得
           task = assign_history.assign_cycle.task
 
-          # 認可チェック（管理者 または タスク担当者）
+          # 認可チェック（管理者 または 現在のアクティブな担当者のみ）
           unless can_complete?(current_account, task)
             return failure(["権限がありません"], :forbidden)
           end
@@ -35,7 +35,7 @@ module Services
             return failure(["既に完了しています"], :unprocessable_entity)
           end
 
-          # 完了処理実行
+          # 完了処理実行: AssignHistory完了 + AssignCycle非アクティブ化（トランザクション内で実行）
           @repository.complete_assign_history(assign_history)
           @repository.deactivate_cycle(assign_history.assign_cycle)
 
