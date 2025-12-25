@@ -424,5 +424,13 @@ RSpec.describe Services::Tasks::Repository, type: :service do
       result = repository.create_cycle(task)
       expect(result.task_id).to eq(task.id)
     end
+
+    context "バリデーションエラーが発生した場合" do
+      it "ActiveRecord::RecordInvalidを発生させること" do
+        # task_idがnilの場合など
+        allow(task).to receive_message_chain(:assign_cycles, :create!).and_raise(ActiveRecord::RecordInvalid.new(AssignCycle.new))
+        expect { repository.create_cycle(task) }.to raise_error(ActiveRecord::RecordInvalid)
+      end
+    end
   end
 end

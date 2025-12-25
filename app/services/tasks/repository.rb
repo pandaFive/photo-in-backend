@@ -96,6 +96,7 @@ module Services
       end
 
       # タスクの全サイクルを非アクティブ化（一括更新）
+      # Note: update_allはバリデーションを実行しないため例外は発生しない
       # @return [Integer] 更新された行数
       def deactivate_all_cycles(task)
         AssignCycle.where(task_id: task.id).update_all(is_active: false)
@@ -103,8 +104,9 @@ module Services
 
       # 新しいサイクルを作成
       # @return [AssignCycle] 作成されたサイクル
+      # @raise [ActiveRecord::RecordInvalid] バリデーション失敗時
       def create_cycle(task)
-        task.assign_cycles.create
+        task.assign_cycles.create!
       end
     end
   end

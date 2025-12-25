@@ -125,9 +125,9 @@ RSpec.describe Services::Tasks::CreateNewCycle, type: :service do
         expect(result.errors).to include("割り当て可能なメンバーがいません")
       end
 
-      it "taskを返すこと（サイクルは作成されているため）" do
+      it "taskがnilであること（トランザクションがロールバックされるため）" do
         result = service.call(params, admin)
-        expect(result.task).to eq(task)
+        expect(result.task).to be_nil
       end
     end
 

@@ -951,10 +951,10 @@ RSpec.describe Api::TasksController, type: :controller do
         expect(json_response["errors"]).to include("割り当て可能なメンバーがいません")
       end
 
-      it "サイクルは作成されていること" do
+      it "サイクルは作成されないこと（トランザクションがロールバックされるため）" do
         expect {
           post :create_new_cycle, params: { id: @task.id }
-        }.to change(AssignCycle, :count).by(1)
+        }.not_to change(AssignCycle, :count)
       end
     end
 

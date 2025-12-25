@@ -21,13 +21,18 @@ module Services
         return failure(validation.errors, nil, :unprocessable_entity) unless validation.success?
 
         # トランザクション内で処理
+        result = nil
         Task.transaction do
           # Task取得（悲観的ロック）
           task = @repository.find_by_id_with_lock(validation.value[:id])
-          return failure(["タスクが見つかりません"], nil, :not_found) if task.nil?
+          if task.nil?
+            result = failure(["タスクが見つかりません"], nil, :not_found)
+            raise ActiveRecord::Rollback
+          end
 
           # 既存サイクルを非アクティブ化
-          @repository.deactivate_all_cycles(task)
+          deactivated_count = @repository.deactivate_all_cycles(task)
+          Rails.logger.debug "Deactivated #{deactivated_count} cycles for task_id=#{task.id}"
 
           # 新サイクル作成
           cycle = @repository.create_cycle(task)
@@ -37,12 +42,14 @@ module Services
 
           if assign_result
             Rails.logger.info "New cycle created: task_id=#{task.id}, cycle_id=#{cycle.id}, by_account=#{current_account.id}, assignee_id=#{assign_result.account_id}"
-            success(task)
+            result = success(task)
           else
             Rails.logger.warn "New cycle created but assignment failed: task_id=#{task.id}, cycle_id=#{cycle.id}, no_eligible_accounts=true"
-            failure(["割り当て可能なメンバーがいません"], task, :unprocessable_entity)
+            result = failure(["割り当て可能なメンバーがいません"], nil, :unprocessable_entity)
+            raise ActiveRecord::Rollback
           end
         end
+        result
       rescue ActiveRecord::Deadlocked, ActiveRecord::LockWaitTimeout => e
         Rails.logger.error "CreateNewCycle lock error: id=#{params[:id]}, error=#{e.message}"
         failure(["サーバーが混雑しています"], nil, :service_unavailable)
