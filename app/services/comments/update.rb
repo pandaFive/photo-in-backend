@@ -49,7 +49,12 @@ module Services
           end
 
           # account関連を読み込み直す（Presenter用）
-          comment = @repository.find_by_id(comment.id)
+          updated_id = comment.id
+          comment = @repository.find_by_id(updated_id)
+          unless comment
+            Rails.logger.error "Comment vanished after update: id=#{updated_id}, by_account=#{current_account.id}"
+            return failure(["コメントの更新後にデータが見つかりませんでした"], :internal_server_error)
+          end
 
           Rails.logger.info "Comment updated: id=#{comment.id}, by_account=#{current_account.id}"
           return Result.new(success?: true, comment:, errors: [], status: :ok)

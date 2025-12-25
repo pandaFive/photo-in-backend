@@ -42,10 +42,18 @@ module Services
         end
 
         # account関連を読み込み直す（Presenter用）
-        comment = @repository.find_by_id(comment.id)
+        saved_id = comment.id
+        comment = @repository.find_by_id(saved_id)
+        unless comment
+          Rails.logger.error "Comment vanished after creation: id=#{saved_id}, task_id=#{task_id}, by_account=#{current_account.id}"
+          return failure(["コメントの作成後にデータが見つかりませんでした"], :internal_server_error)
+        end
 
         Rails.logger.info "Comment created: id=#{comment.id}, task_id=#{task_id}, by_account=#{current_account.id}"
         Result.new(success?: true, comment:, errors: [], status: :created)
+      rescue ActiveRecord::Deadlocked, ActiveRecord::LockWaitTimeout => e
+        Rails.logger.error "Comment create lock error: error=#{e.message}"
+        failure(["サーバーが混雑しています。しばらくしてから再試行してください。"], :service_unavailable)
       rescue ActiveRecord::StatementInvalid => e
         Rails.logger.error "Comment create DB error: #{e.message}"
         failure(["データベースエラーが発生しました"], :internal_server_error)

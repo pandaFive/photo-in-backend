@@ -41,7 +41,10 @@ module Services
             return failure(["このコメントを削除する権限がありません"], :forbidden)
           end
 
-          @repository.destroy(comment)
+          unless @repository.destroy(comment)
+            Rails.logger.error "Comment destroy failed silently: id=#{comment.id}, errors=#{comment.errors.full_messages.join(', ')}"
+            return failure(["コメントの削除に失敗しました"], :unprocessable_entity)
+          end
 
           Rails.logger.info "Comment destroyed: id=#{comment_id}, by_account=#{current_account.id}"
           return Result.new(success?: true, message: "deleted", errors: [], status: :ok)
