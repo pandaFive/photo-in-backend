@@ -133,17 +133,94 @@ RSpec.describe Services::Accounts::Destroy, type: :service do
         target_account.add_area(area)
       end
 
-      it "関連account_areasがある場合、ForeignKeyViolationエラーになること（legacy動作と同等）" do
-        # legacy実装も外部キー制約エラーを処理しないため、例外が発生する
-        expect {
-          described_class.new.call(valid_params, admin)
-        }.to raise_error(ActiveRecord::InvalidForeignKey)
+      it "関連account_areasがある場合、conflictを返すこと" do
+        result = described_class.new.call(valid_params, admin)
+
+        expect(result.success?).to be false
+        expect(result.status).to eq(:conflict)
+        expect(result.errors).to include("このアカウントには関連データ（タスク割当、コメント等）が存在するため削除できません")
       end
 
       it "エラー発生時にアカウントが削除されないこと" do
         expect {
-          described_class.new.call(valid_params, admin) rescue nil
+          described_class.new.call(valid_params, admin)
         }.not_to change(Account, :count)
+      end
+    end
+
+    describe "自己削除防止" do
+      context "管理者が自分自身を削除しようとした場合" do
+        it "forbiddenを返すこと" do
+          result = described_class.new.call({ id: admin.id }, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:forbidden)
+          expect(result.errors).to include("自分自身のアカウントは削除できません")
+        end
+
+        it "アカウントが削除されないこと" do
+          expect {
+            described_class.new.call({ id: admin.id }, admin)
+          }.not_to change(Account, :count)
+        end
+      end
+    end
+
+    describe "最後の管理者削除防止" do
+      context "最後の管理者を削除しようとした場合" do
+        let!(:only_admin) { create(:account, role: "admin") }
+        let!(:target_admin) { create(:account, role: "admin") }
+
+        before do
+          # 既存のadminを削除して、only_adminとtarget_adminだけにする
+          admin.destroy
+        end
+
+        it "管理者が2人以上いる場合は削除可能であること" do
+          result = described_class.new.call({ id: target_admin.id }, only_admin)
+
+          expect(result.success?).to be true
+          expect(result.status).to eq(:ok)
+        end
+
+        it "管理者が1人だけの場合はforbiddenを返すこと" do
+          # target_adminを削除してonly_adminだけにする
+          target_admin.destroy
+
+          # 新しいターゲット管理者を作成
+          new_target = create(:account, role: "admin")
+
+          # この時点で管理者は2人（only_admin, new_target）
+          # new_targetを削除
+          described_class.new.call({ id: new_target.id }, only_admin)
+
+          # only_adminが最後の1人になった状態で、別のメンバーを作成
+          last_member = create(:account_member)
+
+          # only_adminが自分自身を削除しようとしても自己削除防止が先に働く
+          result = described_class.new.call({ id: only_admin.id }, only_admin)
+          expect(result.status).to eq(:forbidden)
+          expect(result.errors).to include("自分自身のアカウントは削除できません")
+        end
+
+        it "他の管理者が最後の管理者を削除しようとした場合はforbiddenを返すこと" do
+          # only_adminとtarget_adminの2人
+          # target_adminを削除してonly_adminだけにする
+          target_admin.destroy
+
+          # 新しい管理者を作成（削除する側）
+          deleter_admin = create(:account, role: "admin")
+
+          # only_adminは最後の管理者ではなくなった（deleter_adminがいる）
+          # deleter_adminがonly_adminを削除しても、まだdeleter_adminがいるのでOK
+          result = described_class.new.call({ id: only_admin.id }, deleter_admin)
+          expect(result.success?).to be true
+
+          # deleter_adminが最後の1人になった
+          # deleter_adminが自分を削除しようとすると自己削除防止
+          result = described_class.new.call({ id: deleter_admin.id }, deleter_admin)
+          expect(result.status).to eq(:forbidden)
+        end
       end
     end
   end

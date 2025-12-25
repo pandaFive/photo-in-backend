@@ -51,6 +51,11 @@ module Services
         Account.find_by(id:)
       end
 
+      # 管理者アカウント数を取得
+      def admin_count
+        Account.where(role: "admin").count
+      end
+
       # メンバーごとの割当統計を取得
       #
       # @param members [ActiveRecord::Relation] 対象のアカウント一覧

@@ -27,11 +27,26 @@ module Services
         account = @repository.get_account(value[:id])
         return failure(["ID'#{value[:id]}'のアカウントは存在しません"], :not_found) unless account
 
+        # 自己削除防止
+        if account.id == current_account.id
+          return failure(["自分自身のアカウントは削除できません"], :forbidden)
+        end
+
+        # 最後の管理者削除防止
+        if account.role == "admin" && @repository.admin_count == 1
+          return failure(["最後の管理者アカウントは削除できません"], :forbidden)
+        end
+
         # 削除実行
         account_id = account.id
         account_name = account.name
-        unless @repository.destroy(account)
-          return failure(account.errors.full_messages, :unprocessable_entity)
+        begin
+          unless @repository.destroy(account)
+            return failure(account.errors.full_messages, :unprocessable_entity)
+          end
+        rescue ActiveRecord::InvalidForeignKey => e
+          Rails.logger.error "Account destroy failed (FK constraint): id=#{account_id}, error=#{e.message}"
+          return failure(["このアカウントには関連データ（タスク割当、コメント等）が存在するため削除できません"], :conflict)
         end
 
         Rails.logger.info "Account destroyed: id=#{account_id}, name=#{account_name}, by_account=#{current_account.id}"

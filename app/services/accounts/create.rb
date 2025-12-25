@@ -38,13 +38,18 @@ module Services
 
         # トランザクション内で保存
         saved = false
-        Account.transaction do
-          @repository.assign_areas(account, areas)
-          saved = @repository.save(account)
-          raise ActiveRecord::Rollback unless saved
+        begin
+          Account.transaction do
+            @repository.assign_areas(account, areas)
+            saved = @repository.save(account)
+            raise ActiveRecord::Rollback unless saved
+          end
+        rescue ActiveRecord::StatementInvalid, ActiveRecord::InvalidForeignKey => e
+          Rails.logger.error "Account create DB error: #{e.class} - #{e.message}"
+          return failure(account, ["データベースエラーが発生しました"], :internal_server_error)
         end
 
-        return failure(account, account.errors.full_messages, :unprocessable_entity) unless saved
+        return failure(account, account.errors.full_messages.presence || ["保存に失敗しました"], :unprocessable_entity) unless saved
 
         Rails.logger.info "Account created: id=#{account.id}, name=#{account.name}, role=#{account.role}, by_account=#{current_account.id}"
         Result.new(success?: true, account:, errors: [], status: :created)
