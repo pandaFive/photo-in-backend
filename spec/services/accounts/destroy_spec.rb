@@ -195,7 +195,7 @@ RSpec.describe Services::Accounts::Destroy, type: :service do
           described_class.new.call({ id: new_target.id }, only_admin)
 
           # only_adminが最後の1人になった状態で、別のメンバーを作成
-          last_member = create(:account_member)
+          create(:account_member)
 
           # only_adminが自分自身を削除しようとしても自己削除防止が先に働く
           result = described_class.new.call({ id: only_admin.id }, only_admin)

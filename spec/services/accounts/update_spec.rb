@@ -56,6 +56,53 @@ RSpec.describe Services::Accounts::Update, type: :service do
         end
       end
 
+      context "パスワード更新の場合" do
+        it "パスワードを更新できること" do
+          new_password = "newpassword123"
+          params = { id: target_account.id, password: new_password }
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be true
+        end
+
+        it "更新後のパスワードで認証できること" do
+          new_password = "newpassword123"
+          params = { id: target_account.id, password: new_password }
+          described_class.new.call(params, admin)
+
+          target_account.reload
+          expect(target_account.authenticate(new_password)).to be_truthy
+        end
+
+        it "更新前のパスワードでは認証できないこと" do
+          old_password = target_account.password
+          new_password = "newpassword123"
+          params = { id: target_account.id, password: new_password }
+          described_class.new.call(params, admin)
+
+          target_account.reload
+          expect(target_account.authenticate(old_password)).to be_falsy
+        end
+      end
+
+      context "capacity境界値テスト" do
+        it "capacityを0に更新できること" do
+          params = { id: target_account.id, capacity: 0 }
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be true
+          expect(result.account.capacity).to eq(0)
+        end
+
+        it "capacityを大きな値に更新できること" do
+          params = { id: target_account.id, capacity: 100 }
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be true
+          expect(result.account.capacity).to eq(100)
+        end
+      end
+
       context "レスポンス形式の検証" do
         it "legacy実装と同じレスポンス形式であること" do
           result = described_class.new.call(valid_params, admin)
@@ -96,6 +143,22 @@ RSpec.describe Services::Accounts::Update, type: :service do
 
           target_account.reload
           expect(target_account.name).to eq(original_name)
+        end
+
+        it "capacityが負の値の場合、失敗を返すこと" do
+          params = { id: target_account.id, capacity: -1 }
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:unprocessable_entity)
+        end
+
+        it "パスワードが短すぎる場合、失敗を返すこと" do
+          params = { id: target_account.id, password: "short" }
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:unprocessable_entity)
         end
       end
 

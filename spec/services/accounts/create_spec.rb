@@ -66,6 +66,53 @@ RSpec.describe Services::Accounts::Create, type: :service do
           expect(result.account.capacity).to eq(0)
         end
       end
+
+      context "capacity境界値テスト" do
+        it "capacityが0の場合、成功すること" do
+          params = valid_params.merge(capacity: 0)
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be true
+          expect(result.account.capacity).to eq(0)
+        end
+
+        it "capacityが大きな値の場合、成功すること" do
+          params = valid_params.merge(capacity: 100)
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be true
+          expect(result.account.capacity).to eq(100)
+        end
+      end
+
+      context "空のエリア配列の場合" do
+        it "エリアなしでアカウントが作成されること" do
+          params = valid_params.merge(area: [])
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be true
+          expect(result.account.areas).to be_empty
+        end
+
+        it "エリアがnilでもアカウントが作成されること" do
+          params = valid_params.merge(area: nil)
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be true
+          expect(result.account.areas).to be_empty
+        end
+      end
+
+      context "重複する名前の場合" do
+        it "同名のアカウントを作成できること" do
+          # 既存のアカウントと同じ名前で作成
+          params = valid_params.merge(name: admin.name)
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be true
+          expect(result.account.name).to eq(admin.name)
+        end
+      end
     end
 
     describe "異常系" do
@@ -97,6 +144,14 @@ RSpec.describe Services::Accounts::Create, type: :service do
 
         it "nameが32文字を超える場合、失敗を返すこと" do
           params = valid_params.merge(name: "a" * 33)
+          result = described_class.new.call(params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:unprocessable_entity)
+        end
+
+        it "capacityが負の値の場合、失敗を返すこと" do
+          params = valid_params.merge(capacity: -1)
           result = described_class.new.call(params, admin)
 
           expect(result.success?).to be false
