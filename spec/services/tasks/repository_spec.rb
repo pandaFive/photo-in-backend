@@ -433,4 +433,35 @@ RSpec.describe Services::Tasks::Repository, type: :service do
       end
     end
   end
+
+  describe "#count_unfulfilleds" do
+    let!(:task) { create(:task, area:) }
+
+    context "アクティブなサイクルがある場合" do
+      let!(:cycle1) { create(:assign_cycle, task:, is_active: true) }
+      let!(:cycle2) { create(:assign_cycle, task:, is_active: true) }
+
+      it "アクティブサイクル数を返すこと" do
+        result = repository.count_unfulfilleds
+        expect(result).to eq(2)
+      end
+    end
+
+    context "アクティブなサイクルがない場合" do
+      it "0を返すこと" do
+        result = repository.count_unfulfilleds
+        expect(result).to eq(0)
+      end
+    end
+
+    context "非アクティブなサイクルがある場合" do
+      let!(:active_cycle) { create(:assign_cycle, task:, is_active: true) }
+      let!(:inactive_cycle) { create(:assign_cycle, task:, is_active: false) }
+
+      it "アクティブサイクルのみカウントすること" do
+        result = repository.count_unfulfilleds
+        expect(result).to eq(1)
+      end
+    end
+  end
 end
