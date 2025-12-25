@@ -24,7 +24,7 @@ Controller → Contract → Service → Repository → Model
 |--------------|---------|-------|------|
 | Accounts | 6/6 | 0 | ✅ 完了 |
 | Authentications | 1/1 | 0 | ✅ 完了 |
-| Tasks | 8/12 | 4 | 🔶 進行中 |
+| Tasks | 9/12 | 3 | 🔶 進行中 |
 | Areas | 0/5 | 5 | ⬜ 未着手 |
 | Comments | 0/5 | 5 | ⬜ 未着手 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
@@ -32,7 +32,7 @@ Controller → Contract → Service → Repository → Model
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 15/38 (39%)**
+**合計: 16/38 (42%)**
 
 ---
 
@@ -76,13 +76,14 @@ Controller → Contract → Service → Repository → Model
   - Service: `Services::Tasks::Completed`
   - Repository: `find_assign_history_with_lock`, `complete_assign_history`, `deactivate_cycle`追加
   - 認証必須化、認可追加（admin + 担当者）
-
-### 未移行
-
-- [ ] `PUT /api/tasks/:id/ng` (ng)
+- [x] `PUT /api/tasks/:id/ng` (ng)
   - Contract: `Contracts::Tasks::Ng`
   - Service: `Services::Tasks::Ng`
-  - Note: AssignHistory + AssignCycle.assign 呼び出し
+  - Repository: `mark_ng`追加
+  - 認証必須化、認可追加（admin + 担当者）
+  - Note: NGマーク後にAssignCycle.assign で再割り当て実行
+
+### 未移行
 
 - [ ] `POST /api/tasks/:id/newCycle` (create_new_cycle)
   - Contract: `Contracts::Tasks::CreateNewCycle`
@@ -205,6 +206,7 @@ Controller → Contract → Service → Repository → Model
 | `GET /api/tasks/:id` | 認証必須化、Presenter経由レスポンス | - |
 | `PUT /api/tasks/:id` | 認証必須化、認可追加(admin+担当者)、`is_complete`削除、Presenter経由レスポンス | - |
 | `DELETE /api/tasks/:id` | 認証必須化、認可追加(admin_only)、レスポンス: 204→200+message | - |
+| `PUT /api/tasks/:id/ng` | 認証必須化、認可追加(admin+担当者)、errors追加 | - |
 
 ---
 

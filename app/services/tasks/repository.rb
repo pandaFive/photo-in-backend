@@ -88,6 +88,12 @@ module Services
       def deactivate_cycle(cycle)
         cycle.update!(is_active: false)
       end
+
+      # AssignHistoryのNG処理（Service層からの呼び出し用）
+      # @raise [ActiveRecord::RecordInvalid] バリデーション失敗時
+      def mark_ng(assign_history)
+        assign_history.update!(ng: true)
+      end
     end
   end
 end

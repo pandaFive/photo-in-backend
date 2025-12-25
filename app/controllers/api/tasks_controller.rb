@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed]
+  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -73,13 +73,11 @@ class Api::TasksController < ApplicationController
   end
 
   def ng
-    assign_history = AssignHistory.find(params[:id])
-    assign_history.update(ng: true)
-    cycle = AssignCycle.find(assign_history[:assign_cycle_id])
-    if cycle.assign
-      render json: { message: "complete", result: true }
+    result = ::Services::Tasks::Ng.new.call(ng_params, @current_account)
+    if result.success?
+      render json: { message: result.message, result: true }, status: result.status
     else
-      render json: { message: "failed", result: false }
+      render json: { message: "failed", result: false, errors: result.errors }, status: result.status
     end
   end
 
@@ -126,6 +124,10 @@ class Api::TasksController < ApplicationController
     end
 
     def completed_params
+      { id: params[:id] }
+    end
+
+    def ng_params
       { id: params[:id] }
     end
 
