@@ -73,15 +73,12 @@ module Services
         end
 
         def success(message)
-          NgResult.new(success?: true, message:, errors: [], status: :ok)
+          Result.new(success?: true, message:, errors: [], status: :ok)
         end
 
         def failure(errors, status)
-          NgResult.new(success?: false, message: "failed", errors:, status:)
+          Result.new(success?: false, message: "failed", errors:, status:)
         end
     end
-
-    # Ng専用Result（後方互換性のためmessageを返す）
-    NgResult = Struct.new(:success?, :message, :errors, :status, keyword_init: true)
   end
 end

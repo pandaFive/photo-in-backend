@@ -23,11 +23,11 @@ module Services
 
       private
         def success(count)
-          UnfulfilledsCountResult.new(success?: true, count:, errors: [], status: :ok)
+          Result.new(success?: true, count:, errors: [], status: :ok)
         end
 
         def failure(errors, status)
-          UnfulfilledsCountResult.new(success?: false, count: nil, errors:, status:)
+          Result.new(success?: false, count: nil, errors:, status:)
         end
 
         def log_error(message, error, account)
@@ -39,8 +39,5 @@ module Services
           )
         end
     end
-
-    # UnfulfilledsCount専用Result
-    UnfulfilledsCountResult = Struct.new(:success?, :count, :errors, :status, keyword_init: true)
   end
 end

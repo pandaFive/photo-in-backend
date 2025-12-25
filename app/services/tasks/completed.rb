@@ -59,15 +59,12 @@ module Services
         end
 
         def success
-          CompletedResult.new(success?: true, message: "change completed", errors: [], status: :ok)
+          Result.new(success?: true, message: "change completed", errors: [], status: :ok)
         end
 
         def failure(errors, status)
-          CompletedResult.new(success?: false, message: "change failed", errors:, status:)
+          Result.new(success?: false, message: "change failed", errors:, status:)
         end
     end
-
-    # Completed専用Result（後方互換性のためmessageを返す）
-    CompletedResult = Struct.new(:success?, :message, :errors, :status, keyword_init: true)
   end
 end
