@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng, :create_new_cycle, :unfulfilleds_count]
+  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng, :create_new_cycle, :unfulfilleds_count, :get_complete_data]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -89,9 +89,13 @@ class Api::TasksController < ApplicationController
   end
 
   def get_complete_data
-    result = AssignHistory.get_completed_past_week
-
-    render json: result
+    result = ::Services::Tasks::GetCompleteData.new.call(@current_account)
+    if result.success?
+      render json: result.data, status: result.status
+    else
+      Rails.logger.error(message: "GetCompleteData failed", errors: result.errors, account_id: @current_account&.id)
+      render_error(result.errors, result.status)
+    end
   end
 
   def get_account_task

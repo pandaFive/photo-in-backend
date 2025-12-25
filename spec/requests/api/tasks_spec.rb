@@ -1065,15 +1065,81 @@ RSpec.describe Api::TasksController, type: :controller do
   end
 
   describe "GET #get_complete_data" do
-    it "Status 200が返ってくること" do
-      get :get_complete_data
-      expect(response).to have_http_status(:ok)
+    before do
+      @admin = create(:account)
+      @member = create(:account_member)
     end
 
-    it "ハッシュが返ってくること" do
-      get :get_complete_data
-      json_response = JSON.parse(response.body)
-      expect(json_response).to be_a(Hash)
+    context "認証なしの場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+
+      it "Status 401が返ること" do
+        get :get_complete_data
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "エラーメッセージが返ること" do
+        get :get_complete_data
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("unauthorized")
+      end
+    end
+
+    context "管理者で認証されている場合" do
+      before do
+        token = JsonWebToken.encode(account_id: @admin.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ってくること" do
+        get :get_complete_data
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "ハッシュが返ってくること" do
+        get :get_complete_data
+        json_response = JSON.parse(response.body)
+        expect(json_response).to be_a(Hash)
+      end
+    end
+
+    context "一般メンバーで認証されている場合" do
+      before do
+        token = JsonWebToken.encode(account_id: @member.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ってくること（認可なし）" do
+        get :get_complete_data
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "ハッシュが返ってくること" do
+        get :get_complete_data
+        json_response = JSON.parse(response.body)
+        expect(json_response).to be_a(Hash)
+      end
+    end
+
+    context "完了データがある場合" do
+      let!(:area) { create(:area) }
+      let!(:task) { create(:task, area:) }
+      let!(:cycle) { create(:assign_cycle, task:) }
+      let!(:history) { create(:assign_history, assign_cycle: cycle, account: @admin, completed: true, completed_at: 1.day.ago) }
+
+      before do
+        token = JsonWebToken.encode(account_id: @admin.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "日付別カウントを含むハッシュが返ること" do
+        get :get_complete_data
+        json_response = JSON.parse(response.body)
+        expect(json_response).to be_a(Hash)
+        expect(json_response.values.first).to be_a(Integer) if json_response.any?
+      end
     end
   end
 

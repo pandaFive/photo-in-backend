@@ -56,6 +56,11 @@ module Services
         AssignCycle.unfulfilleds.count
       end
 
+      # 過去1週間の完了データを日付別に取得
+      def get_completed_past_week
+        AssignHistory.get_completed_past_week
+      end
+
       # タグをIDで取得
       def find_tag(id)
         Tag.find_by(id:)

@@ -476,4 +476,43 @@ RSpec.describe Services::Tasks::Repository, type: :service do
       end
     end
   end
+
+  describe "#get_completed_past_week" do
+    let!(:task) { create(:task, area:) }
+    let!(:cycle) { create(:assign_cycle, task:) }
+    let!(:account) { create(:account) }
+
+    context "過去1週間に完了履歴がある場合" do
+      let!(:history1) { create(:assign_history, assign_cycle: cycle, account:, completed: true, completed_at: 1.day.ago) }
+      let!(:history2) { create(:assign_history, assign_cycle: cycle, account:, completed: true, completed_at: 1.day.ago) }
+      let!(:history3) { create(:assign_history, assign_cycle: cycle, account:, completed: true, completed_at: 2.days.ago) }
+
+      it "日付別にグループ化されたハッシュを返すこと" do
+        result = repository.get_completed_past_week
+        expect(result).to be_a(Hash)
+      end
+
+      it "各日付のカウントが正しいこと" do
+        result = repository.get_completed_past_week
+        # 1.day.agoの日付に2件、2.days.agoの日付に1件
+        expect(result.values.sum).to eq(3)
+      end
+    end
+
+    context "過去1週間に完了履歴がない場合" do
+      it "空のハッシュを返すこと" do
+        result = repository.get_completed_past_week
+        expect(result).to eq({})
+      end
+    end
+
+    context "1週間以上前の完了履歴のみの場合" do
+      let!(:old_history) { create(:assign_history, assign_cycle: cycle, account:, completed: true, completed_at: 10.days.ago) }
+
+      it "空のハッシュを返すこと" do
+        result = repository.get_completed_past_week
+        expect(result).to eq({})
+      end
+    end
+  end
 end
