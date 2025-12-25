@@ -16,7 +16,10 @@ module Services
 
         # Contract検証
         validation = ::Contracts::Accounts::Destroy.call(params)
-        return failure(validation.errors, :unprocessable_entity) unless validation.success?
+        unless validation.success?
+          Rails.logger.warn "Account destroy validation failed: #{validation.errors.join(', ')}"
+          return failure(validation.errors, :unprocessable_entity)
+        end
 
         # 認可チェック（admin_only）
         policy = ::Policies::AccountPolicy.new(current_account)

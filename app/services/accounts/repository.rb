@@ -51,6 +51,13 @@ module Services
         Account.find_by(id:)
       end
 
+      # IDでアカウントを取得（悲観ロック付き）
+      #
+      # トランザクション内で使用すること
+      def get_account_with_lock(id)
+        Account.lock.find_by(id:)
+      end
+
       # 管理者アカウント数を取得
       def admin_count
         Account.where(role: "admin").count

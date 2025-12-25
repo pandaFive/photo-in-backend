@@ -10,7 +10,8 @@ module Contracts
 
       attr_accessor :id
 
-      validates :id, presence: true, numericality: { only_integer: true }
+      validates :id, presence: true
+      validates :id, numericality: { only_integer: true, greater_than: 0 }, if: -> { id.present? }
 
       def self.call(params)
         contract = new(id: params[:id])

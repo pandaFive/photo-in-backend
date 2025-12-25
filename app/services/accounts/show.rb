@@ -16,7 +16,10 @@ module Services
 
         # Contract検証
         validation = ::Contracts::Accounts::Show.call(params)
-        return failure(nil, validation.errors, :unprocessable_entity) unless validation.success?
+        unless validation.success?
+          Rails.logger.warn "Account show validation failed: #{validation.errors.join(', ')}"
+          return failure(nil, validation.errors, :unprocessable_entity)
+        end
 
         # 認可チェック（admin_only）
         policy = ::Policies::AccountPolicy.new(current_account)
