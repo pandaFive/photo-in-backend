@@ -26,11 +26,11 @@ module Services
 
       private
         def success(data)
-          GetCompleteDataResult.new(success?: true, data:, errors: [], status: :ok)
+          Result.new(success?: true, data:, errors: [], status: :ok)
         end
 
         def failure(errors, status)
-          GetCompleteDataResult.new(success?: false, data: nil, errors:, status:)
+          Result.new(success?: false, data: nil, errors:, status:)
         end
 
         def log_error(message, error, account)
@@ -42,8 +42,5 @@ module Services
           )
         end
     end
-
-    # GetCompleteData専用Result
-    GetCompleteDataResult = Struct.new(:success?, :data, :errors, :status, keyword_init: true)
   end
 end

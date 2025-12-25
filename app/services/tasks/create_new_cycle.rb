@@ -60,15 +60,12 @@ module Services
 
       private
         def success(task)
-          CreateNewCycleResult.new(success?: true, task:, message: nil, errors: [], status: :ok)
+          Result.new(success?: true, task:, message: nil, errors: [], status: :ok)
         end
 
         def failure(errors, task, status)
-          CreateNewCycleResult.new(success?: false, task:, message: "failed", errors:, status:)
+          Result.new(success?: false, task:, message: "failed", errors:, status:)
         end
     end
-
-    # CreateNewCycle専用Result
-    CreateNewCycleResult = Struct.new(:success?, :task, :message, :errors, :status, keyword_init: true)
   end
 end

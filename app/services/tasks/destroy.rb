@@ -42,15 +42,12 @@ module Services
 
       private
         def success
-          DestroyResult.new(success?: true, message: "deleted", errors: [], status: :ok)
+          Result.new(success?: true, message: "deleted", errors: [], status: :ok)
         end
 
         def failure(errors, status)
-          DestroyResult.new(success?: false, message: nil, errors:, status:)
+          Result.new(success?: false, message: nil, errors:, status:)
         end
     end
-
-    # Destroy専用Result（taskを返さない）
-    DestroyResult = Struct.new(:success?, :message, :errors, :status, keyword_init: true)
   end
 end
