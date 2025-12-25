@@ -118,6 +118,11 @@ module Services
       def create_cycle(task)
         task.assign_cycles.create!
       end
+
+      # アカウントに割り当てられたアクティブなタスクを取得
+      def get_account_assign_tasks(account_id)
+        Task.get_account_assign_tasks(account_id)
+      end
     end
   end
 end
