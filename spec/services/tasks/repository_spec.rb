@@ -330,4 +330,28 @@ RSpec.describe Services::Tasks::Repository, type: :service do
       expect(assign_cycle.reload.is_active).to be false
     end
   end
+
+  describe "#mark_ng" do
+    let!(:task) { create(:task, area:) }
+    let!(:account) { create(:account) }
+    let!(:assign_cycle) { create(:assign_cycle, task:) }
+    let!(:assign_history) { create(:assign_history, assign_cycle:, account:, ng: false) }
+
+    it "trueを返すこと" do
+      result = repository.mark_ng(assign_history)
+      expect(result).to be true
+    end
+
+    it "ngがtrueに更新されること" do
+      repository.mark_ng(assign_history)
+      expect(assign_history.reload.ng).to be true
+    end
+
+    context "バリデーションエラーが発生した場合" do
+      it "ActiveRecord::RecordInvalidを発生させること" do
+        allow(assign_history).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(assign_history))
+        expect { repository.mark_ng(assign_history) }.to raise_error(ActiveRecord::RecordInvalid)
+      end
+    end
+  end
 end

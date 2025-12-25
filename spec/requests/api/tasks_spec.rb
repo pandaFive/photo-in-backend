@@ -645,31 +645,213 @@ RSpec.describe Api::TasksController, type: :controller do
 
   describe "PUT #ng" do
     before do
+      @admin = create(:account)
       @member = create(:account_member)
+      @other_member = create(:account_member)
       @area = create(:area)
       @member.add_area(@area)
       @task = create(:task, area_id: @area.id)
-      @cycle = create(:assign_cycle, task_id: @task.id)
-      @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, ng: false)
+      @cycle = create(:assign_cycle, task_id: @task.id, is_active: true)
+      @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, ng: false, completed: false)
     end
 
-    context "有効なパラメータの場合" do
+    context "認証なしの場合" do
+      it "Status 401が返ってくること" do
+        put :ng, params: { id: @history.id }
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context "管理者がNG操作する場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
       it "Status 200が返ってくること" do
         put :ng, params: { id: @history.id }
         expect(response).to have_http_status(:ok)
       end
 
-      it "ngがtrueになること" do
+      it "resultがtrueを返すこと" do
         put :ng, params: { id: @history.id }
-        @history.reload
-        expect(@history.ng).to be true
+        json_response = JSON.parse(response.body)
+        expect(json_response["result"]).to be true
+      end
+
+      it "AssignHistoryのngがtrueに更新されること" do
+        put :ng, params: { id: @history.id }
+        expect(@history.reload.ng).to be true
+      end
+    end
+
+    context "担当メンバーが自分のタスクをNG操作する場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ってくること" do
+        put :ng, params: { id: @history.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "AssignHistoryのngがtrueに更新されること" do
+        put :ng, params: { id: @history.id }
+        expect(@history.reload.ng).to be true
+      end
+    end
+
+    context "非担当メンバーがNG操作しようとする場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @other_member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status forbiddenが返ってくること" do
+        put :ng, params: { id: @history.id }
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("権限がありません")
+      end
+
+      it "AssignHistoryが更新されないこと" do
+        put :ng, params: { id: @history.id }
+        expect(@history.reload.ng).to be false
       end
     end
 
     context "存在しないAssignHistoryの場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
       it "Status 404が返ってくること" do
         put :ng, params: { id: 999999 }
         expect(response).to have_http_status(:not_found)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :ng, params: { id: 999999 }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("担当履歴が見つかりません")
+      end
+    end
+
+    context "無効なIDフォーマットの場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "非数値IDでStatus 422が返ること" do
+        put :ng, params: { id: "invalid" }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "0のIDでStatus 422が返ること" do
+        put :ng, params: { id: "0" }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "負数のIDでStatus 422が返ること" do
+        put :ng, params: { id: "-1" }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "既にNGの場合" do
+      before do
+        @history.update(ng: true)
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status unprocessable_entityが返ってくること" do
+        put :ng, params: { id: @history.id }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("既にNGです")
+      end
+    end
+
+    context "既に完了済みの場合" do
+      before do
+        @history.update(completed: true)
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status unprocessable_entityが返ってくること" do
+        put :ng, params: { id: @history.id }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "エラーメッセージが返ってくること" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("既に完了しています")
+      end
+    end
+
+    context "NG後に再割り当てが実行される場合" do
+      before do
+        @another_member = create(:account_member)
+        @another_member.add_area(@area)
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "新しいAssignHistoryが作成されること" do
+        expect {
+          put :ng, params: { id: @history.id }
+        }.to change(AssignHistory, :count).by(1)
+      end
+
+      it "新しい担当者に割り当てられること" do
+        put :ng, params: { id: @history.id }
+        new_history = @cycle.assign_histories.where.not(id: @history.id).last
+        expect(new_history.account_id).to eq(@another_member.id)
+      end
+
+      it "messageがcompleteを返すこと" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["message"]).to eq("complete")
+      end
+    end
+
+    context "再割り当て対象者がいない場合" do
+      before do
+        # memberが唯一のエリア担当者で、NG済みになるため再割り当て不可
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ること（NG自体は成功）" do
+        put :ng, params: { id: @history.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "messageがfailedを返すこと" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["message"]).to eq("failed")
+      end
+
+      it "resultがtrueを返すこと（NG操作自体は成功）" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["result"]).to be true
       end
     end
   end
