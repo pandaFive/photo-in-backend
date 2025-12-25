@@ -983,21 +983,84 @@ RSpec.describe Api::TasksController, type: :controller do
 
   describe "GET #unfulfilleds_count" do
     before do
+      @admin = create(:account)
       @member = create(:account_member)
       @area = create(:area)
       @task = create(:task, area_id: @area.id)
-      @cycle = create(:assign_cycle, task_id: @task.id)
+      @cycle = create(:assign_cycle, task_id: @task.id, is_active: true)
     end
 
-    it "Status 200が返ってくること" do
-      get :unfulfilleds_count
-      expect(response).to have_http_status(:ok)
+    context "認証なしの場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+
+      it "Status 401が返ること" do
+        get :unfulfilleds_count
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "エラーメッセージが返ること" do
+        get :unfulfilleds_count
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("unauthorized")
+      end
     end
 
-    it "数値が返ってくること" do
-      get :unfulfilleds_count
-      json_response = JSON.parse(response.body)
-      expect(json_response).to be_a(Integer)
+    context "管理者で認証されている場合" do
+      before do
+        token = JsonWebToken.encode(account_id: @admin.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ってくること" do
+        get :unfulfilleds_count
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "数値が返ってくること" do
+        get :unfulfilleds_count
+        json_response = JSON.parse(response.body)
+        expect(json_response).to be_a(Integer)
+      end
+
+      it "アクティブサイクル数が返ること" do
+        get :unfulfilleds_count
+        json_response = JSON.parse(response.body)
+        expect(json_response).to eq(1)
+      end
+    end
+
+    context "一般メンバーで認証されている場合" do
+      before do
+        token = JsonWebToken.encode(account_id: @member.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ってくること（認可なし）" do
+        get :unfulfilleds_count
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "数値が返ってくること" do
+        get :unfulfilleds_count
+        json_response = JSON.parse(response.body)
+        expect(json_response).to be_a(Integer)
+      end
+    end
+
+    context "アクティブサイクルがない場合" do
+      before do
+        @cycle.update!(is_active: false)
+        token = JsonWebToken.encode(account_id: @admin.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "0が返ること" do
+        get :unfulfilleds_count
+        json_response = JSON.parse(response.body)
+        expect(json_response).to eq(0)
+      end
     end
   end
 

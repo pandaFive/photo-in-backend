@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng, :create_new_cycle]
+  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng, :create_new_cycle, :unfulfilleds_count]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -79,8 +79,13 @@ class Api::TasksController < ApplicationController
   end
 
   def unfulfilleds_count
-    res = AssignCycle.unfulfilleds
-    render json: res.count
+    result = ::Services::Tasks::UnfulfilledsCount.new.call(@current_account)
+    if result.success?
+      render json: result.count, status: result.status
+    else
+      Rails.logger.warn(message: "UnfulfilledsCount failed", errors: result.errors, account_id: @current_account&.id)
+      render_error(result.errors, result.status)
+    end
   end
 
   def get_complete_data

@@ -24,7 +24,7 @@ Controller → Contract → Service → Repository → Model
 |--------------|---------|-------|------|
 | Accounts | 6/6 | 0 | ✅ 完了 |
 | Authentications | 1/1 | 0 | ✅ 完了 |
-| Tasks | 10/12 | 2 | 🔶 進行中 |
+| Tasks | 11/12 | 1 | 🔶 進行中 |
 | Areas | 0/5 | 5 | ⬜ 未着手 |
 | Comments | 0/5 | 5 | ⬜ 未着手 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
@@ -32,7 +32,7 @@ Controller → Contract → Service → Repository → Model
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 17/38 (45%)**
+**合計: 18/38 (47%)**
 
 ---
 
@@ -89,11 +89,13 @@ Controller → Contract → Service → Repository → Model
   - Presenter: `TaskPresenter.render_task`（既存）
   - 認証必須化、認可追加（admin_only）
 
-### 未移行
-
-- [ ] `GET /api/unfulfilled-count` (unfulfilleds_count)
+- [x] `GET /api/unfulfilled-count` (unfulfilleds_count)
   - Service: `Services::Tasks::UnfulfilledsCount`
+  - Repository: `count_unfulfilleds`追加
   - Note: Contractなし（パラメータなし）
+  - 認証必須化
+
+### 未移行
 
 - [ ] `GET /api/completed-data` (get_complete_data)
   - Service: `Services::Tasks::GetCompleteData`
@@ -208,6 +210,7 @@ Controller → Contract → Service → Repository → Model
 | `PUT /api/tasks/:id` | 認証必須化、認可追加(admin+担当者)、`is_complete`削除、Presenter経由レスポンス | - |
 | `DELETE /api/tasks/:id` | 認証必須化、認可追加(admin_only)、レスポンス: 204→200+message | - |
 | `PUT /api/tasks/:id/ng` | 認証必須化、認可追加(admin+担当者)、errors追加 | - |
+| `GET /api/unfulfilled-count` | 認証必須化 | - |
 
 ---
 

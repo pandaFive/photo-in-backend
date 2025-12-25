@@ -51,6 +51,11 @@ module Services
         Task.get_ng_tasks
       end
 
+      # 未完了（アクティブ）サイクル数を取得
+      def count_unfulfilleds
+        AssignCycle.unfulfilleds.count
+      end
+
       # タグをIDで取得
       def find_tag(id)
         Tag.find_by(id:)
