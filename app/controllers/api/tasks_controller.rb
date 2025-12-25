@@ -93,7 +93,7 @@ class Api::TasksController < ApplicationController
     if result.success?
       render json: result.data, status: result.status
     else
-      Rails.logger.warn(message: "GetCompleteData failed", errors: result.errors, account_id: @current_account&.id)
+      Rails.logger.error(message: "GetCompleteData failed", errors: result.errors, account_id: @current_account&.id)
       render_error(result.errors, result.status)
     end
   end

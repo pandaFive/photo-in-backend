@@ -19,6 +19,9 @@ module Services
       rescue ActiveRecord::StatementInvalid, ActiveRecord::QueryCanceled => e
         log_error("データベースクエリ失敗", e, current_account)
         failure(["データの取得に失敗しました。"], :internal_server_error)
+      rescue StandardError => e
+        log_error("予期しないエラー", e, current_account)
+        failure(["予期しないエラーが発生しました。"], :internal_server_error)
       end
 
       private

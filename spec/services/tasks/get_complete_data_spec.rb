@@ -106,6 +106,24 @@ RSpec.describe Services::Tasks::GetCompleteData, type: :service do
       end
     end
 
+    context "PostgreSQL接続エラーの場合" do
+      before do
+        allow(repository).to receive(:get_completed_past_week).and_raise(PG::ConnectionBad)
+        allow(Rails.logger).to receive(:error)
+      end
+
+      it "失敗を返すこと" do
+        result = service.call(admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq(:service_unavailable)
+      end
+
+      it "エラーメッセージを返すこと" do
+        result = service.call(admin)
+        expect(result.errors).to include("データベース接続に失敗しました。しばらくしてから再試行してください。")
+      end
+    end
+
     context "データベースクエリエラーの場合" do
       before do
         allow(repository).to receive(:get_completed_past_week).and_raise(ActiveRecord::StatementInvalid.new("query error"))
@@ -126,6 +144,47 @@ RSpec.describe Services::Tasks::GetCompleteData, type: :service do
       it "エラーをログに記録すること" do
         service.call(admin)
         expect(Rails.logger).to have_received(:error).with(hash_including(message: "データベースクエリ失敗"))
+      end
+    end
+
+    context "クエリキャンセル（タイムアウト）の場合" do
+      before do
+        allow(repository).to receive(:get_completed_past_week).and_raise(ActiveRecord::QueryCanceled)
+        allow(Rails.logger).to receive(:error)
+      end
+
+      it "失敗を返すこと" do
+        result = service.call(admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq(:internal_server_error)
+      end
+
+      it "エラーメッセージを返すこと" do
+        result = service.call(admin)
+        expect(result.errors).to include("データの取得に失敗しました。")
+      end
+    end
+
+    context "予期しないエラーの場合" do
+      before do
+        allow(repository).to receive(:get_completed_past_week).and_raise(StandardError.new("unexpected error"))
+        allow(Rails.logger).to receive(:error)
+      end
+
+      it "失敗を返すこと" do
+        result = service.call(admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq(:internal_server_error)
+      end
+
+      it "エラーメッセージを返すこと" do
+        result = service.call(admin)
+        expect(result.errors).to include("予期しないエラーが発生しました。")
+      end
+
+      it "エラーをログに記録すること" do
+        service.call(admin)
+        expect(Rails.logger).to have_received(:error).with(hash_including(message: "予期しないエラー"))
       end
     end
   end
