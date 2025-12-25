@@ -55,5 +55,20 @@ module Presenters
         }
       end
     end
+
+    # アカウント割り当てタスク一覧用（get_account_assign_tasksの結果をフォーマット）
+    # titleをtask_titleに変換して返す
+    def self.render_account_assign_tasks(tasks)
+      tasks.map do |task|
+        {
+          id: task.id,
+          task_title: task.title,
+          area_name: task.area_name,
+          history_id: task.history_id,
+          assign_cycle_id: task.assign_cycle_id,
+          created_at: task.created_at
+        }
+      end
+    end
   end
 end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng, :create_new_cycle, :unfulfilleds_count, :get_complete_data]
+  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng, :create_new_cycle, :unfulfilleds_count, :get_complete_data, :get_account_task]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -99,9 +99,10 @@ class Api::TasksController < ApplicationController
   end
 
   def get_account_task
-    id = params[:id]
-    tasks = Task.get_account_assign_tasks(id)
-    render json: tasks
+    result = ::Services::Tasks::GetAccountTask.new.call(get_account_task_params, @current_account)
+    render_result(result) do
+      ::Presenters::TaskPresenter.render_account_assign_tasks(result.tasks)
+    end
   end
 
   private
@@ -143,5 +144,9 @@ class Api::TasksController < ApplicationController
 
     def complete_params
       params.require(:task).permit(:cycle_id)
+    end
+
+    def get_account_task_params
+      { id: params[:id] }
     end
 end

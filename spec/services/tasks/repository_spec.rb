@@ -477,6 +477,91 @@ RSpec.describe Services::Tasks::Repository, type: :service do
     end
   end
 
+  describe "#get_account_assign_tasks" do
+    let!(:task) { create(:task, area:) }
+    let!(:account) { create(:account) }
+    let!(:other_account) { create(:account_member) }
+    let!(:assign_cycle) { create(:assign_cycle, task:, is_active: true) }
+
+    context "アクティブな割り当てがある場合" do
+      let!(:history) { create(:assign_history, assign_cycle:, account:, completed: false, ng: false) }
+
+      it "割り当てられたタスクを返すこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result.length).to eq(1)
+        expect(result.first.id).to eq(task.id)
+      end
+
+      it "title属性を含むこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result.first).to respond_to(:title)
+        expect(result.first.title).to eq(task.task_title)
+      end
+
+      it "area_name属性を含むこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result.first).to respond_to(:area_name)
+        expect(result.first.area_name).to eq(area.name)
+      end
+
+      it "history_id属性を含むこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result.first).to respond_to(:history_id)
+        expect(result.first.history_id).to eq(history.id)
+      end
+
+      it "assign_cycle_id属性を含むこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result.first).to respond_to(:assign_cycle_id)
+        expect(result.first.assign_cycle_id).to eq(assign_cycle.id)
+      end
+    end
+
+    context "完了済みの割り当てがある場合" do
+      let!(:history) { create(:assign_history, assign_cycle:, account:, completed: true, ng: false) }
+
+      it "空配列を返すこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result).to be_empty
+      end
+    end
+
+    context "NG済みの割り当てがある場合" do
+      let!(:history) { create(:assign_history, assign_cycle:, account:, completed: false, ng: true) }
+
+      it "空配列を返すこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result).to be_empty
+      end
+    end
+
+    context "非アクティブなサイクルの割り当てがある場合" do
+      let!(:inactive_cycle) { create(:assign_cycle, task:, is_active: false) }
+      let!(:history) { create(:assign_history, assign_cycle: inactive_cycle, account:, completed: false, ng: false) }
+
+      it "空配列を返すこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result).to be_empty
+      end
+    end
+
+    context "他のアカウントの割り当てがある場合" do
+      let!(:history) { create(:assign_history, assign_cycle:, account: other_account, completed: false, ng: false) }
+
+      it "空配列を返すこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result).to be_empty
+      end
+    end
+
+    context "割り当てがない場合" do
+      it "空配列を返すこと" do
+        result = repository.get_account_assign_tasks(account.id)
+        expect(result).to be_empty
+      end
+    end
+  end
+
   describe "#get_completed_past_week" do
     let!(:task) { create(:task, area:) }
     let!(:cycle) { create(:assign_cycle, task:) }

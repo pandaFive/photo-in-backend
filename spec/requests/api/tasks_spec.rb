@@ -1145,22 +1145,99 @@ RSpec.describe Api::TasksController, type: :controller do
 
   describe "GET #get_account_task" do
     before do
+      @admin = create(:account)
       @member = create(:account_member)
+      @other_member = create(:account_member, name: "other_member")
       @area = create(:area)
       @task = create(:task, area_id: @area.id)
       @cycle = create(:assign_cycle, task_id: @task.id)
       @history = create(:assign_history, account_id: @member.id, assign_cycle_id: @cycle.id, completed: false, ng: false)
     end
 
-    it "Status 200が返ってくること" do
-      get :get_account_task, params: { id: @member.id }
-      expect(response).to have_http_status(:ok)
+    context "認証なしの場合" do
+      before do
+        request.headers["Authorization"] = nil
+      end
+
+      it "Status 401が返ること" do
+        get :get_account_task, params: { id: @member.id }
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "エラーメッセージが返ること" do
+        get :get_account_task, params: { id: @member.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("unauthorized")
+      end
     end
 
-    it "アカウントに割り当てられたタスクが返ってくること" do
-      get :get_account_task, params: { id: @member.id }
-      json_response = JSON.parse(response.body)
-      expect(json_response).to be_an(Array)
+    context "管理者で認証されている場合" do
+      before do
+        token = JsonWebToken.encode(account_id: @admin.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "自分のタスクでStatus 200が返ること" do
+        get :get_account_task, params: { id: @admin.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "他人のタスクでもStatus 200が返ること" do
+        get :get_account_task, params: { id: @member.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "配列が返ること" do
+        get :get_account_task, params: { id: @member.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response).to be_an(Array)
+      end
+
+      it "task_titleフィールドが含まれること" do
+        get :get_account_task, params: { id: @member.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response.first).to include("task_title")
+      end
+    end
+
+    context "一般メンバーで認証されている場合" do
+      before do
+        token = JsonWebToken.encode(account_id: @member.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "自分のタスクでStatus 200が返ること" do
+        get :get_account_task, params: { id: @member.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "他人のタスクでStatus 403が返ること" do
+        get :get_account_task, params: { id: @other_member.id }
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "他人のタスクでエラーメッセージが返ること" do
+        get :get_account_task, params: { id: @other_member.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["errors"]).to include("この操作を行う権限がありません")
+      end
+    end
+
+    context "無効なパラメータの場合" do
+      before do
+        token = JsonWebToken.encode(account_id: @admin.id)
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "idが空でStatus 422が返ること" do
+        get :get_account_task, params: { id: "" }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "idが非数値でStatus 422が返ること" do
+        get :get_account_task, params: { id: "abc" }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
     end
   end
 end
