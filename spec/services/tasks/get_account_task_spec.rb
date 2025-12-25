@@ -25,22 +25,22 @@ RSpec.describe Services::Tasks::GetAccountTask, type: :service do
     end
 
     context "Contract検証が失敗した場合" do
-      it "bad_requestを返すこと（idが空）" do
+      it "unprocessable_entityを返すこと（idが空）" do
         result = service.call({ id: "" }, admin)
         expect(result.success?).to be false
-        expect(result.status).to eq(:bad_request)
+        expect(result.status).to eq(:unprocessable_entity)
       end
 
-      it "bad_requestを返すこと（idがnil）" do
+      it "unprocessable_entityを返すこと（idがnil）" do
         result = service.call({ id: nil }, admin)
         expect(result.success?).to be false
-        expect(result.status).to eq(:bad_request)
+        expect(result.status).to eq(:unprocessable_entity)
       end
 
-      it "bad_requestを返すこと（idが非数値）" do
+      it "unprocessable_entityを返すこと（idが非数値）" do
         result = service.call({ id: "abc" }, admin)
         expect(result.success?).to be false
-        expect(result.status).to eq(:bad_request)
+        expect(result.status).to eq(:unprocessable_entity)
       end
     end
 
@@ -205,29 +205,6 @@ RSpec.describe Services::Tasks::GetAccountTask, type: :service do
       it "エラーメッセージを返すこと" do
         result = service.call({ id: admin.id.to_s }, admin)
         expect(result.errors).to include("データの取得に失敗しました。")
-      end
-    end
-
-    context "予期しないエラーの場合" do
-      before do
-        allow(repository).to receive(:get_account_assign_tasks).and_raise(StandardError.new("unexpected error"))
-        allow(Rails.logger).to receive(:error)
-      end
-
-      it "失敗を返すこと" do
-        result = service.call({ id: admin.id.to_s }, admin)
-        expect(result.success?).to be false
-        expect(result.status).to eq(:internal_server_error)
-      end
-
-      it "エラーメッセージを返すこと" do
-        result = service.call({ id: admin.id.to_s }, admin)
-        expect(result.errors).to include("予期しないエラーが発生しました。")
-      end
-
-      it "エラーをログに記録すること" do
-        service.call({ id: admin.id.to_s }, admin)
-        expect(Rails.logger).to have_received(:error).with(hash_including(message: "予期しないエラー"))
       end
     end
   end

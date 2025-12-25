@@ -3,6 +3,7 @@
 module Services
   module Tasks
     # アカウント割り当てタスク取得
+    # 認可: 管理者は全アカウント、一般メンバーは自分のみ
     class GetAccountTask
       def initialize(repository: Repository.new)
         @repository = repository
@@ -12,7 +13,7 @@ module Services
         return failure(["認証が必要です"], :unauthorized) if current_account.nil?
 
         contract_result = Contracts::Tasks::GetAccountTask.call(params)
-        return failure(contract_result.errors, :bad_request) unless contract_result.success?
+        return failure(contract_result.errors, :unprocessable_entity) unless contract_result.success?
 
         account_id = contract_result.value[:account_id]
 
@@ -29,22 +30,20 @@ module Services
       rescue ActiveRecord::StatementInvalid, ActiveRecord::QueryCanceled => e
         log_error("データベースクエリ失敗", e, current_account)
         failure(["データの取得に失敗しました。"], :internal_server_error)
-      rescue StandardError => e
-        log_error("予期しないエラー", e, current_account)
-        failure(["予期しないエラーが発生しました。"], :internal_server_error)
       end
 
       private
+        # 認可判定: 管理者か自分自身へのアクセスのみ許可
         def authorized?(policy, current_account, target_account_id)
           policy.admin_only? || current_account.id == target_account_id
         end
 
         def success(tasks)
-          GetAccountTaskResult.new(success?: true, tasks:, errors: [], status: :ok)
+          Result.new(success?: true, task: nil, tasks:, errors: [], status: :ok)
         end
 
         def failure(errors, status)
-          GetAccountTaskResult.new(success?: false, tasks: nil, errors:, status:)
+          Result.new(success?: false, task: nil, tasks: nil, errors:, status:)
         end
 
         def log_error(message, error, account)
@@ -52,12 +51,10 @@ module Services
             message:,
             error_class: error.class.name,
             error_message: error.message,
-            account_id: account&.id
+            account_id: account&.id,
+            backtrace: error.backtrace&.first(10)&.join("\n")
           )
         end
     end
-
-    # GetAccountTask専用Result
-    GetAccountTaskResult = Struct.new(:success?, :tasks, :errors, :status, keyword_init: true)
   end
 end

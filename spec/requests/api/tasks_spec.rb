@@ -1229,14 +1229,14 @@ RSpec.describe Api::TasksController, type: :controller do
         request.headers["Authorization"] = "Bearer #{token}"
       end
 
-      it "idが空でStatus 400が返ること" do
+      it "idが空でStatus 422が返ること" do
         get :get_account_task, params: { id: "" }
-        expect(response).to have_http_status(:bad_request)
+        expect(response).to have_http_status(:unprocessable_entity)
       end
 
-      it "idが非数値でStatus 400が返ること" do
+      it "idが非数値でStatus 422が返ること" do
         get :get_account_task, params: { id: "abc" }
-        expect(response).to have_http_status(:bad_request)
+        expect(response).to have_http_status(:unprocessable_entity)
       end
     end
   end
