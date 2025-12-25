@@ -7,7 +7,8 @@ module Contracts
 
       attr_accessor :id, :name, :password, :role, :capacity
 
-      validates :id, presence: true, numericality: { only_integer: true }
+      validates :id, presence: true
+      validates :id, numericality: { only_integer: true, greater_than: 0 }, if: -> { id.present? }
       validates :name, length: { maximum: 32 }, allow_nil: true
       validates :password, length: { minimum: 8 }, allow_nil: true
       validates :role, inclusion: { in: %w[admin member] }, allow_nil: true

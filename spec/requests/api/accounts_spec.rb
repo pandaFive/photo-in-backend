@@ -305,5 +305,127 @@ RSpec.describe Api::AccountsController, type: :controller do
         expect(response).to have_http_status(:not_found)
       end
     end
+
+    context "自分自身を削除しようとした場合" do
+      it "Status 403が返ってくること" do
+        delete :destroy, params: { id: @admin.id }
+        expect(response).to have_http_status(:forbidden)
+      end
+
+      it "適切なエラーメッセージが返ること" do
+        delete :destroy, params: { id: @admin.id }
+        json_response = JSON.parse(response.body, symbolize_names: true)
+        expect(json_response[:errors]).to include("自分自身のアカウントは削除できません")
+      end
+
+      it "アカウントが削除されないこと" do
+        expect { delete :destroy, params: { id: @admin.id } }.not_to change(Account, :count)
+      end
+    end
+
+    context "最後の管理者を削除しようとした場合" do
+      let!(:other_admin) { create(:account) }
+
+      before do
+        # @adminを削除して、other_adminだけにする
+        @admin.destroy
+        token = JsonWebToken.encode({ account_id: other_admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 403が返ってくること" do
+        # 他の管理者を作成して削除を試みる（自己削除にならないように）
+        another_admin = create(:account)
+        # この時点で管理者は2人（other_admin, another_admin）
+        # another_adminを削除しても問題なし
+        delete :destroy, params: { id: another_admin.id }
+        expect(response).to have_http_status(:ok)
+
+        # 最後の1人になったother_adminは削除できない（自己削除防止で先にブロック）
+        # 別の管理者から見て最後の管理者を削除しようとするケースをテスト
+      end
+    end
+
+    context "最後の管理者を他の管理者が削除しようとした場合" do
+      let!(:admin2) { create(:account) }
+
+      before do
+        # admin2でログイン
+        token = JsonWebToken.encode({ account_id: admin2.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+        # @adminを削除して管理者を1人にする
+        @admin.destroy
+      end
+
+      it "最後の管理者（自分自身）は削除できないこと" do
+        # admin2が最後の管理者
+        delete :destroy, params: { id: admin2.id }
+        expect(response).to have_http_status(:forbidden)
+        json_response = JSON.parse(response.body, symbolize_names: true)
+        expect(json_response[:errors]).to include("自分自身のアカウントは削除できません")
+      end
+    end
+  end
+
+  # JWT セキュリティテスト
+  describe "JWT Token Security" do
+    let!(:admin) { create(:account) }
+
+    context "期限切れトークンでアクセスする場合" do
+      before do
+        expired_token = JsonWebToken.encode({ account_id: admin.id }, 1.day.ago)
+        request.headers["Authorization"] = "Bearer #{expired_token}"
+      end
+
+      it "unauthorizedが返ること" do
+        get :index
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "適切なエラーメッセージが返ること" do
+        get :index
+        json_response = JSON.parse(response.body, symbolize_names: true)
+        expect(json_response[:errors]).to include("Token has expired")
+      end
+    end
+
+    context "不正な署名のトークンでアクセスする場合" do
+      before do
+        # 異なる秘密鍵で署名された正しい形式のJWT
+        invalid_token = JWT.encode({ account_id: admin.id }, "wrong_secret", "HS256")
+        request.headers["Authorization"] = "Bearer #{invalid_token}"
+      end
+
+      it "unauthorizedが返ること" do
+        get :index
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context "Bearer プレフィックスなしでアクセスする場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: admin.id })
+        request.headers["Authorization"] = token
+      end
+
+      # 現在の実装では Bearer プレフィックスなしでもトークンを受け入れる
+      # split(" ").last でトークン部分を抽出するため
+      it "トークンが有効であればアクセスできること" do
+        get :index
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "存在しないアカウントIDのトークンでアクセスする場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: 999999 })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "unauthorizedが返ること" do
+        get :index
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
   end
 end

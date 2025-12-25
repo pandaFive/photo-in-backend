@@ -12,9 +12,10 @@ RSpec.shared_examples "admin only service" do
   context "current_accountがnilの場合" do
     let(:current_account) { nil }
 
-    it "forbiddenを返すこと" do
+    it "unauthorizedを返すこと" do
       expect(result.success?).to be false
-      expect(result.status).to eq(:forbidden)
+      expect(result.status).to eq(:unauthorized)
+      expect(result.errors).to include("認証が必要です")
     end
   end
 end
