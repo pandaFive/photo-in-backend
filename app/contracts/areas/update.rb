@@ -18,9 +18,9 @@ module Contracts
         )
 
         if contract.valid?
-          Result.new(success?: true, value: contract.normalized_attributes, errors: [])
+          Contracts::Result.new(success?: true, value: contract.normalized_attributes, errors: [])
         else
-          Result.new(success?: false, value: nil, errors: contract.errors.full_messages)
+          Contracts::Result.new(success?: false, value: nil, errors: contract.errors.full_messages)
         end
       end
 

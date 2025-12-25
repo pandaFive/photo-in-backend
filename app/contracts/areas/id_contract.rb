@@ -14,9 +14,9 @@ module Contracts
         contract = new(id: params[:id])
 
         if contract.valid?
-          Result.new(success?: true, value: { id: contract.id.to_i }, errors: [])
+          Contracts::Result.new(success?: true, value: { id: contract.id.to_i }, errors: [])
         else
-          Result.new(success?: false, value: nil, errors: contract.errors.full_messages)
+          Contracts::Result.new(success?: false, value: nil, errors: contract.errors.full_messages)
         end
       end
     end

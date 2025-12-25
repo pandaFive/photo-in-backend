@@ -13,9 +13,9 @@ module Contracts
         contract = new(name: params.dig(:area, :name) || params[:name])
 
         if contract.valid?
-          Result.new(success?: true, value: { name: contract.name }, errors: [])
+          Contracts::Result.new(success?: true, value: { name: contract.name }, errors: [])
         else
-          Result.new(success?: false, value: nil, errors: contract.errors.full_messages)
+          Contracts::Result.new(success?: false, value: nil, errors: contract.errors.full_messages)
         end
       end
     end
