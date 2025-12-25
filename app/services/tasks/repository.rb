@@ -94,6 +94,18 @@ module Services
       def mark_ng(assign_history)
         assign_history.update!(ng: true)
       end
+
+      # タスクの全サイクルを非アクティブ化（一括更新）
+      # @return [Integer] 更新された行数
+      def deactivate_all_cycles(task)
+        AssignCycle.where(task_id: task.id).update_all(is_active: false)
+      end
+
+      # 新しいサイクルを作成
+      # @return [AssignCycle] 作成されたサイクル
+      def create_cycle(task)
+        task.assign_cycles.create
+      end
     end
   end
 end
