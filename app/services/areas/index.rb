@@ -12,6 +12,9 @@ module Services
 
         areas = @repository.all_areas
         Result.new(success?: true, areas:, errors: [], status: :ok)
+      rescue ActiveRecord::StatementInvalid => e
+        Rails.logger.error "Area index DB error: #{e.message}"
+        failure(["データベースエラーが発生しました"], :internal_server_error)
       end
 
       private

@@ -20,17 +20,26 @@ module Services
         return failure(["権限がありません"], :forbidden) unless policy.admin_only?
 
         value = validation.value
-        area = @repository.find_by_id(value[:id])
-        return failure(["ID'#{value[:id]}'のエリアは存在しません"], :not_found) unless area
-
         update_attrs = value.except(:id).compact
-        unless @repository.update(area, update_attrs)
-          Rails.logger.warn "Area update failed: id=#{area.id}, errors=#{area.errors.full_messages.join(', ')}"
-          return failure(area.errors.full_messages, :unprocessable_entity)
-        end
 
-        Rails.logger.info "Area updated: id=#{area.id}, by_account=#{current_account.id}"
-        Result.new(success?: true, area:, errors: [], status: :ok)
+        Area.transaction do
+          area = @repository.find_by_id_with_lock(value[:id])
+          return failure(["ID'#{value[:id]}'のエリアは存在しません"], :not_found) unless area
+
+          unless @repository.update(area, update_attrs)
+            Rails.logger.warn "Area update failed: id=#{area.id}, errors=#{area.errors.full_messages.join(', ')}"
+            return failure(area.errors.full_messages, :unprocessable_entity)
+          end
+
+          Rails.logger.info "Area updated: id=#{area.id}, by_account=#{current_account.id}"
+          Result.new(success?: true, area:, errors: [], status: :ok)
+        end
+      rescue ActiveRecord::LockWaitTimeout, ActiveRecord::Deadlocked => e
+        Rails.logger.error "Area update lock timeout: #{e.message}"
+        failure(["サーバーが混雑しています。しばらくしてから再度お試しください"], :service_unavailable)
+      rescue ActiveRecord::StatementInvalid => e
+        Rails.logger.error "Area update DB error: #{e.message}"
+        failure(["データベースエラーが発生しました"], :internal_server_error)
       end
 
       private

@@ -22,15 +22,19 @@ module Services
         area = @repository.find_by_id(validation.value[:id])
         return failure(["ID'#{validation.value[:id]}'のエリアは存在しません"], :not_found) unless area
 
-        begin
-          @repository.destroy(area)
-        rescue ActiveRecord::InvalidForeignKey => e
-          Rails.logger.error "Area destroy failed (FK constraint): id=#{area.id}, error=#{e.message}"
-          return failure(["このエリアにはアカウントが関連付けられているため削除できません"], :conflict)
-        end
+        @repository.destroy(area)
 
         Rails.logger.info "Area destroyed: id=#{validation.value[:id]}, by_account=#{current_account.id}"
         Result.new(success?: true, message: "deleted", errors: [], status: :ok)
+      rescue ActiveRecord::InvalidForeignKey => e
+        Rails.logger.error "Area destroy failed (FK constraint): id=#{area.id}, error=#{e.message}"
+        failure(["このエリアにはアカウントが関連付けられているため削除できません"], :conflict)
+      rescue ActiveRecord::LockWaitTimeout, ActiveRecord::Deadlocked => e
+        Rails.logger.error "Area destroy lock timeout: #{e.message}"
+        failure(["サーバーが混雑しています。しばらくしてから再度お試しください"], :service_unavailable)
+      rescue ActiveRecord::StatementInvalid => e
+        Rails.logger.error "Area destroy DB error: #{e.message}"
+        failure(["データベースエラーが発生しました"], :internal_server_error)
       end
 
       private

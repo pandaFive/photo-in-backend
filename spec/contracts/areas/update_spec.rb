@@ -32,7 +32,7 @@ RSpec.describe Contracts::Areas::Update, type: :contract do
 
       it "32文字のnameで成功すること" do
         name = "a" * 32
-        result = described_class.call({ id: 1, name: name })
+        result = described_class.call({ id: 1, name: })
 
         expect(result.success?).to be true
         expect(result.value[:name]).to eq(name)
@@ -63,7 +63,7 @@ RSpec.describe Contracts::Areas::Update, type: :contract do
 
       it "nameが33文字の場合、失敗すること" do
         name = "a" * 33
-        result = described_class.call({ id: 1, name: name })
+        result = described_class.call({ id: 1, name: })
 
         expect(result.success?).to be false
         expect(result.errors).not_to be_empty

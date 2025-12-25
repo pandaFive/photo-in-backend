@@ -20,6 +20,9 @@ module Services
         return failure(["ID'#{validation.value[:id]}'のエリアは存在しません"], :not_found) unless area
 
         Result.new(success?: true, area:, errors: [], status: :ok)
+      rescue ActiveRecord::StatementInvalid => e
+        Rails.logger.error "Area show DB error: #{e.message}"
+        failure(["データベースエラーが発生しました"], :internal_server_error)
       end
 
       private

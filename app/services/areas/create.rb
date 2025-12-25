@@ -26,6 +26,9 @@ module Services
 
         Rails.logger.info "Area created: id=#{area.id}, name=#{area.name}, by_account=#{current_account.id}"
         Result.new(success?: true, area:, errors: [], status: :created)
+      rescue ActiveRecord::StatementInvalid => e
+        Rails.logger.error "Area create DB error: #{e.message}"
+        failure(["データベースエラーが発生しました"], :internal_server_error)
       end
 
       private
