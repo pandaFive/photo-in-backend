@@ -45,13 +45,14 @@ module Services
 
           # 再割り当て実行
           cycle = assign_history.assign_cycle
-          reassign_success = cycle.assign
+          reassign_result = cycle.assign
 
-          Rails.logger.info "Task NG: assign_history_id=#{assign_history.id}, task_id=#{task.id}, by_account=#{current_account.id}, reassigned=#{reassign_success}"
-
-          if reassign_success
+          if reassign_result
+            Rails.logger.info "Task NG: assign_history_id=#{assign_history.id}, task_id=#{task.id}, by_account=#{current_account.id}, reassigned=true, new_assignee_id=#{reassign_result.account_id}"
             success("complete")
           else
+            # 再割り当て失敗: 適格者なし または 保存失敗
+            Rails.logger.warn "Task NG reassignment failed: assign_history_id=#{assign_history.id}, task_id=#{task.id}, cycle_id=#{cycle.id}, no_eligible_accounts_or_save_failed=true"
             success("failed") # NGは成功、再割り当てのみ失敗
           end
         end

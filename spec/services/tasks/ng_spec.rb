@@ -107,11 +107,12 @@ RSpec.describe Services::Tasks::Ng, type: :service do
 
     context "管理者がNG操作する場合" do
       let(:params) { { id: assign_history.id.to_s } }
+      let(:new_assign_history) { instance_double(AssignHistory, account_id: other_member.id) }
 
       before do
         allow(repository).to receive(:find_assign_history_with_lock).with(assign_history.id).and_return(assign_history)
         allow(repository).to receive(:mark_ng).with(assign_history).and_return(true)
-        allow(assign_cycle).to receive(:assign).and_return(true)
+        allow(assign_cycle).to receive(:assign).and_return(new_assign_history)
       end
 
       it "成功を返すこと" do
@@ -128,11 +129,12 @@ RSpec.describe Services::Tasks::Ng, type: :service do
 
     context "担当者が自分のタスクをNG操作する場合" do
       let(:params) { { id: assign_history.id.to_s } }
+      let(:new_assign_history) { instance_double(AssignHistory, account_id: other_member.id) }
 
       before do
         allow(repository).to receive(:find_assign_history_with_lock).with(assign_history.id).and_return(assign_history)
         allow(repository).to receive(:mark_ng).with(assign_history).and_return(true)
-        allow(assign_cycle).to receive(:assign).and_return(true)
+        allow(assign_cycle).to receive(:assign).and_return(new_assign_history)
       end
 
       it "成功を返すこと" do
@@ -144,11 +146,12 @@ RSpec.describe Services::Tasks::Ng, type: :service do
 
     context "再割り当てが成功した場合" do
       let(:params) { { id: assign_history.id.to_s } }
+      let(:new_assign_history) { instance_double(AssignHistory, account_id: other_member.id) }
 
       before do
         allow(repository).to receive(:find_assign_history_with_lock).with(assign_history.id).and_return(assign_history)
         allow(repository).to receive(:mark_ng).with(assign_history).and_return(true)
-        allow(assign_cycle).to receive(:assign).and_return(true)
+        allow(assign_cycle).to receive(:assign).and_return(new_assign_history)
       end
 
       it "message が 'complete' を返すこと" do

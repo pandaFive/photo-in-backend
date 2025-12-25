@@ -780,6 +780,58 @@ RSpec.describe Api::TasksController, type: :controller do
         expect(json_response["errors"]).to include("既に完了しています")
       end
     end
+
+    context "NG後に再割り当てが実行される場合" do
+      before do
+        @another_member = create(:account_member)
+        @another_member.add_area(@area)
+        token = JsonWebToken.encode({ account_id: @member.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "新しいAssignHistoryが作成されること" do
+        expect {
+          put :ng, params: { id: @history.id }
+        }.to change(AssignHistory, :count).by(1)
+      end
+
+      it "新しい担当者に割り当てられること" do
+        put :ng, params: { id: @history.id }
+        new_history = @cycle.assign_histories.where.not(id: @history.id).last
+        expect(new_history.account_id).to eq(@another_member.id)
+      end
+
+      it "messageがcompleteを返すこと" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["message"]).to eq("complete")
+      end
+    end
+
+    context "再割り当て対象者がいない場合" do
+      before do
+        # memberが唯一のエリア担当者で、NG済みになるため再割り当て不可
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "Status 200が返ること（NG自体は成功）" do
+        put :ng, params: { id: @history.id }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "messageがfailedを返すこと" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["message"]).to eq("failed")
+      end
+
+      it "resultがtrueを返すこと（NG操作自体は成功）" do
+        put :ng, params: { id: @history.id }
+        json_response = JSON.parse(response.body)
+        expect(json_response["result"]).to be true
+      end
+    end
   end
 
   describe "POST #create_new_cycle" do
