@@ -17,12 +17,18 @@ module Services
         end
 
         policy = ::Policies::AreaPolicy.new(current_account)
-        return failure(["権限がありません"], :forbidden) unless policy.admin_only?
+        unless policy.admin_only?
+          Rails.logger.warn "Area destroy unauthorized: account_id=#{current_account.id}, role=#{current_account.role}"
+          return failure(["権限がありません"], :forbidden)
+        end
 
         area = @repository.find_by_id(validation.value[:id])
         return failure(["ID'#{validation.value[:id]}'のエリアは存在しません"], :not_found) unless area
 
-        @repository.destroy(area)
+        unless @repository.destroy(area)
+          Rails.logger.error "Area destroy failed (callbacks): id=#{area.id}, errors=#{area.errors.full_messages.join(', ')}"
+          return failure(["エリアの削除に失敗しました"], :unprocessable_entity)
+        end
 
         Rails.logger.info "Area destroyed: id=#{validation.value[:id]}, by_account=#{current_account.id}"
         Result.new(success?: true, message: "deleted", errors: [], status: :ok)

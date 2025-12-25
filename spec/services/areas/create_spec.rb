@@ -81,6 +81,23 @@ RSpec.describe Services::Areas::Create, type: :service do
           }.not_to change(Area, :count)
         end
       end
+
+      context "データベースエラーが発生した場合" do
+        let(:mock_repository) { instance_double(Services::Areas::Repository) }
+
+        before do
+          allow(mock_repository).to receive(:build).and_return(Area.new(name: "東京"))
+          allow(mock_repository).to receive(:save).and_raise(ActiveRecord::StatementInvalid.new("Database error"))
+        end
+
+        it "internal_server_errorを返すこと" do
+          result = described_class.new(repository: mock_repository).call(valid_params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:internal_server_error)
+          expect(result.errors).to include("データベースエラーが発生しました")
+        end
+      end
     end
   end
 end

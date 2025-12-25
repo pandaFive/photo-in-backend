@@ -112,6 +112,53 @@ RSpec.describe Services::Areas::Update, type: :service do
           expect(result.errors.first).to include("999999")
         end
       end
+
+      context "ロックタイムアウトが発生した場合" do
+        let(:mock_repository) { instance_double(Services::Areas::Repository) }
+
+        before do
+          allow(mock_repository).to receive(:find_by_id_with_lock).and_raise(ActiveRecord::LockWaitTimeout)
+        end
+
+        it "service_unavailableを返すこと" do
+          result = described_class.new(repository: mock_repository).call(valid_params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:service_unavailable)
+          expect(result.errors.first).to include("混雑")
+        end
+      end
+
+      context "デッドロックが発生した場合" do
+        let(:mock_repository) { instance_double(Services::Areas::Repository) }
+
+        before do
+          allow(mock_repository).to receive(:find_by_id_with_lock).and_raise(ActiveRecord::Deadlocked)
+        end
+
+        it "service_unavailableを返すこと" do
+          result = described_class.new(repository: mock_repository).call(valid_params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:service_unavailable)
+        end
+      end
+
+      context "データベースエラーが発生した場合" do
+        let(:mock_repository) { instance_double(Services::Areas::Repository) }
+
+        before do
+          allow(mock_repository).to receive(:find_by_id_with_lock).and_raise(ActiveRecord::StatementInvalid.new("Database error"))
+        end
+
+        it "internal_server_errorを返すこと" do
+          result = described_class.new(repository: mock_repository).call(valid_params, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:internal_server_error)
+          expect(result.errors).to include("データベースエラーが発生しました")
+        end
+      end
     end
   end
 end

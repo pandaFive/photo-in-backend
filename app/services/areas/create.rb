@@ -17,10 +17,14 @@ module Services
         end
 
         policy = ::Policies::AreaPolicy.new(current_account)
-        return failure(["権限がありません"], :forbidden) unless policy.admin_only?
+        unless policy.admin_only?
+          Rails.logger.warn "Area create unauthorized: account_id=#{current_account.id}, role=#{current_account.role}"
+          return failure(["権限がありません"], :forbidden)
+        end
 
         area = @repository.build(name: validation.value[:name])
         unless @repository.save(area)
+          Rails.logger.warn "Area create failed: name=#{validation.value[:name]}, errors=#{area.errors.full_messages.join(', ')}, by_account=#{current_account.id}"
           return failure(area.errors.full_messages, :unprocessable_entity)
         end
 
