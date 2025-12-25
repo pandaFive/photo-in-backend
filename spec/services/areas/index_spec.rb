@@ -55,6 +55,22 @@ RSpec.describe Services::Areas::Index, type: :service do
           expect(result.errors).to include("認証が必要です")
         end
       end
+
+      context "データベースエラーが発生した場合" do
+        let(:mock_repository) { instance_double(Services::Areas::Repository) }
+
+        before do
+          allow(mock_repository).to receive(:all_areas).and_raise(ActiveRecord::StatementInvalid.new("Database error"))
+        end
+
+        it "internal_server_errorを返すこと" do
+          result = described_class.new(repository: mock_repository).call(admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:internal_server_error)
+          expect(result.errors).to include("データベースエラーが発生しました")
+        end
+      end
     end
   end
 end

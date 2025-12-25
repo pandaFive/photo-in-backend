@@ -72,6 +72,22 @@ RSpec.describe Services::Areas::Show, type: :service do
           expect(result.errors.first).to include("999999")
         end
       end
+
+      context "データベースエラーが発生した場合" do
+        let(:mock_repository) { instance_double(Services::Areas::Repository) }
+
+        before do
+          allow(mock_repository).to receive(:find_by_id).and_raise(ActiveRecord::StatementInvalid.new("Database error"))
+        end
+
+        it "internal_server_errorを返すこと" do
+          result = described_class.new(repository: mock_repository).call({ id: 1 }, admin)
+
+          expect(result.success?).to be false
+          expect(result.status).to eq(:internal_server_error)
+          expect(result.errors).to include("データベースエラーが発生しました")
+        end
+      end
     end
   end
 end

@@ -101,8 +101,7 @@ RSpec.describe Services::Areas::Destroy, type: :service do
         let(:mock_repository) { instance_double(Services::Areas::Repository) }
 
         before do
-          allow(mock_repository).to receive(:find_by_id).and_return(area)
-          allow(mock_repository).to receive(:destroy).and_raise(ActiveRecord::LockWaitTimeout)
+          allow(mock_repository).to receive(:find_by_id_with_lock).and_raise(ActiveRecord::LockWaitTimeout)
         end
 
         it "service_unavailableを返すこと" do
@@ -118,8 +117,7 @@ RSpec.describe Services::Areas::Destroy, type: :service do
         let(:mock_repository) { instance_double(Services::Areas::Repository) }
 
         before do
-          allow(mock_repository).to receive(:find_by_id).and_return(area)
-          allow(mock_repository).to receive(:destroy).and_raise(ActiveRecord::StatementInvalid.new("Database error"))
+          allow(mock_repository).to receive(:find_by_id_with_lock).and_raise(ActiveRecord::StatementInvalid.new("Database error"))
         end
 
         it "internal_server_errorを返すこと" do
