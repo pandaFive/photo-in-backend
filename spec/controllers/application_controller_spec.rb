@@ -165,7 +165,9 @@ RSpec.describe ApplicationController, type: :controller do
 
     context "トークンが無効な場合" do
       it "errors配列形式で401を返すこと" do
-        request.headers["Authorization"] = "Bearer invalid_token"
+        # 異なる秘密鍵で署名された正しい形式のJWT
+        invalid_token = JWT.encode({ account_id: 1 }, "wrong_secret", "HS256")
+        request.headers["Authorization"] = "Bearer #{invalid_token}"
 
         get :protected_action
         expect(response).to have_http_status(:unauthorized)

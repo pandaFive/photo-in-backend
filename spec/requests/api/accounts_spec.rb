@@ -389,9 +389,11 @@ RSpec.describe Api::AccountsController, type: :controller do
       end
     end
 
-    context "不正形式のトークンでアクセスする場合" do
+    context "不正な署名のトークンでアクセスする場合" do
       before do
-        request.headers["Authorization"] = "Bearer invalid.jwt.token"
+        # 異なる秘密鍵で署名された正しい形式のJWT
+        invalid_token = JWT.encode({ account_id: admin.id }, "wrong_secret", "HS256")
+        request.headers["Authorization"] = "Bearer #{invalid_token}"
       end
 
       it "unauthorizedが返ること" do
