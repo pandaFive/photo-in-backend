@@ -124,7 +124,7 @@ RSpec.describe Services::Accounts::Create, type: :service do
 
           expect(result.success?).to be false
           expect(result.status).to eq(:not_found)
-          expect(result.errors.first).to include("Area not found")
+          expect(result.errors.first).to include("エリアが見つかりません")
         end
 
         it "アカウントが作成されないこと" do
