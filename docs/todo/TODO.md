@@ -110,6 +110,12 @@ Controller → Contract → Service → Repository → Model
   - 認証必須化、認可追加（admin + 自分のみ）
   - Note: `title` → `task_title` に変更（破壊的変更）
 
+### リファクタリング完了 ✅
+- [x] Result Struct 統合 - PR #73
+  - 6つの個別Result Structを`Services::Tasks::Result`に統合
+  - 削除: DestroyResult, CompletedResult, NgResult, CreateNewCycleResult, UnfulfilledsCountResult, GetCompleteDataResult
+  - 統合フィールド: success?, task, tasks, message, count, data, errors, status
+
 ---
 
 ## Phase 2: Areas コントローラー (優先度: 中)
