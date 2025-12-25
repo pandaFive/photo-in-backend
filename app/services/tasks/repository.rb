@@ -72,7 +72,7 @@ module Services
         true
       end
 
-      # AssignHistoryをIDで取得（悲観的ロック付き - 同時完了操作によるレースコンディション防止）
+      # AssignHistoryをIDで取得（悲観的ロック付き - 完了/NG操作の同時実行によるレースコンディション防止）
       def find_assign_history_with_lock(id)
         AssignHistory.lock.find_by(id:)
       end

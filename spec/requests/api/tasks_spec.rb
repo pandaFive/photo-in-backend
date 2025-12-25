@@ -743,6 +743,28 @@ RSpec.describe Api::TasksController, type: :controller do
       end
     end
 
+    context "無効なIDフォーマットの場合" do
+      before do
+        token = JsonWebToken.encode({ account_id: @admin.id })
+        request.headers["Authorization"] = "Bearer #{token}"
+      end
+
+      it "非数値IDでStatus 422が返ること" do
+        put :ng, params: { id: "invalid" }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "0のIDでStatus 422が返ること" do
+        put :ng, params: { id: "0" }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "負数のIDでStatus 422が返ること" do
+        put :ng, params: { id: "-1" }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
     context "既にNGの場合" do
       before do
         @history.update(ng: true)
