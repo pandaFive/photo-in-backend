@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng]
+  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed, :ng, :create_new_cycle]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -63,12 +63,9 @@ class Api::TasksController < ApplicationController
   end
 
   def create_new_cycle
-    task = Task.find(params[:id])
-    cycle = task.create_new_cycle
-    if cycle.assign
-      render json: task
-    else
-      render json: { status: 422 }
+    result = ::Services::Tasks::CreateNewCycle.new.call(create_new_cycle_params, @current_account)
+    render_result(result) do
+      ::Presenters::TaskPresenter.render_task(result.task)
     end
   end
 
@@ -128,6 +125,10 @@ class Api::TasksController < ApplicationController
     end
 
     def ng_params
+      { id: params[:id] }
+    end
+
+    def create_new_cycle_params
       { id: params[:id] }
     end
 

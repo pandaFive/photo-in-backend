@@ -24,7 +24,7 @@ Controller → Contract → Service → Repository → Model
 |--------------|---------|-------|------|
 | Accounts | 6/6 | 0 | ✅ 完了 |
 | Authentications | 1/1 | 0 | ✅ 完了 |
-| Tasks | 9/12 | 3 | 🔶 進行中 |
+| Tasks | 10/12 | 2 | 🔶 進行中 |
 | Areas | 0/5 | 5 | ⬜ 未着手 |
 | Comments | 0/5 | 5 | ⬜ 未着手 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
@@ -32,7 +32,7 @@ Controller → Contract → Service → Repository → Model
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 16/38 (42%)**
+**合計: 17/38 (45%)**
 
 ---
 
@@ -82,13 +82,14 @@ Controller → Contract → Service → Repository → Model
   - Repository: `mark_ng`追加
   - 認証必須化、認可追加（admin + 担当者）
   - Note: NGマーク後にAssignCycle.assign で再割り当て実行
-
-### 未移行
-
-- [ ] `POST /api/tasks/:id/newCycle` (create_new_cycle)
+- [x] `POST /api/tasks/:id/newCycle` (create_new_cycle)
   - Contract: `Contracts::Tasks::CreateNewCycle`
   - Service: `Services::Tasks::CreateNewCycle`
-  - Note: Task + AssignCycle操作
+  - Repository: `deactivate_all_cycles`, `create_cycle`追加
+  - Presenter: `TaskPresenter.render_task`（既存）
+  - 認証必須化、認可追加（admin_only）
+
+### 未移行
 
 - [ ] `GET /api/unfulfilled-count` (unfulfilleds_count)
   - Service: `Services::Tasks::UnfulfilledsCount`
