@@ -25,14 +25,14 @@ Controller → Contract → Service → Repository → Model
 | Accounts | 6/6 | 0 | ✅ 完了 |
 | Authentications | 1/1 | 0 | ✅ 完了 |
 | Tasks | 13/13 | 0 | ✅ 完了 |
-| Areas | 0/5 | 5 | ⬜ 未着手 |
+| Areas | 5/5 | 0 | ✅ 完了 |
 | Comments | 0/5 | 5 | ⬜ 未着手 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
 | Assigns | 0/1 | 1 | ⬜ 未着手 |
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 20/39 (51%)**
+**合計: 25/39 (64%)**
 
 ---
 
@@ -118,17 +118,48 @@ Controller → Contract → Service → Repository → Model
 
 ---
 
-## Phase 2: Areas コントローラー (優先度: 中)
+## Phase 2: Areas コントローラー完了 (優先度: 中)
 
-- [ ] `GET /api/areas` (index)
-- [ ] `GET /api/areas/:id` (show)
-- [ ] `POST /api/areas` (create)
-- [ ] `PUT /api/areas/:id` (update)
-- [ ] `DELETE /api/areas/:id` (destroy)
+### 移行済み ✅ - PR #75
+- [x] `GET /api/areas` (index)
+  - Service: `Services::Areas::Index`
+  - Repository: `all_areas`
+  - Presenter: `AreaPresenter.render_areas`
+  - 認証必須化
+- [x] `GET /api/areas/:id` (show)
+  - Contract: `Contracts::Areas::Show`
+  - Service: `Services::Areas::Show`
+  - Repository: `find_by_id`
+  - Presenter: `AreaPresenter.render_area`
+  - 認証必須化
+- [x] `POST /api/areas` (create)
+  - Contract: `Contracts::Areas::Create`
+  - Service: `Services::Areas::Create`
+  - Repository: `build`, `save`
+  - Presenter: `AreaPresenter.render_area`
+  - Policy: `AreaPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+- [x] `PUT /api/areas/:id` (update)
+  - Contract: `Contracts::Areas::Update`
+  - Service: `Services::Areas::Update`
+  - Repository: `find_by_id_with_lock`, `update`
+  - Presenter: `AreaPresenter.render_area`
+  - Policy: `AreaPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+  - トランザクション + 悲観ロック
+- [x] `DELETE /api/areas/:id` (destroy)
+  - Contract: `Contracts::Areas::Destroy`
+  - Service: `Services::Areas::Destroy`
+  - Repository: `find_by_id_with_lock`, `destroy`
+  - Policy: `AreaPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+  - トランザクション + 悲観ロック
+  - FK制約エラー処理（409 Conflict）
 
-必要なファイル:
-- `app/contracts/areas/` - create, show, update, destroy
+作成ファイル:
+- `app/contracts/areas/` - id_contract, show, destroy, create, update
 - `app/services/areas/` - index, show, create, update, destroy, repository, result
+- `app/policies/area_policy.rb`
 - `app/presenters/area_presenter.rb`
 
 ---
@@ -224,6 +255,11 @@ Controller → Contract → Service → Repository → Model
 | `GET /api/unfulfilled-count` | 認証必須化 | - |
 | `GET /api/completed-data` | 認証必須化 | - |
 | `GET /api/account/tasks` | 認証必須化、認可追加(admin+自分)、`title`→`task_title` | - |
+| `GET /api/areas` | 認証必須化 | #75 |
+| `GET /api/areas/:id` | 認証必須化 | #75 |
+| `POST /api/areas` | 認証必須化、認可追加(admin_only) | #75 |
+| `PUT /api/areas/:id` | 認証必須化、認可追加(admin_only)、悲観ロック | #75 |
+| `DELETE /api/areas/:id` | 認証必須化、認可追加(admin_only)、悲観ロック、FK制約→409 | #75 |
 
 ---
 
@@ -245,6 +281,13 @@ Controller → Contract → Service → Repository → Model
 - `app/services/tasks/index.rb`, `create.rb`, `show.rb`, `update.rb`
 - `app/services/tasks/repository.rb`
 - `app/presenters/task_presenter.rb`
+
+### Areas CRUD
+- `app/contracts/areas/id_contract.rb`, `show.rb`, `destroy.rb`, `create.rb`, `update.rb`
+- `app/services/areas/index.rb`, `show.rb`, `create.rb`, `update.rb`, `destroy.rb`
+- `app/services/areas/repository.rb`, `result.rb`
+- `app/presenters/area_presenter.rb`
+- `app/policies/area_policy.rb`
 
 ---
 
