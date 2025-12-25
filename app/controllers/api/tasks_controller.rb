@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Api::TasksController < ApplicationController
-  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag]
+  before_action :authenticated?, only: [:index, :show, :create, :update, :destroy, :add_tag, :remove_tag, :completed]
 
   def index
     result = ::Services::Tasks::Index.new.call(index_params, @current_account)
@@ -54,14 +54,11 @@ class Api::TasksController < ApplicationController
   end
 
   def completed
-    assign_history = AssignHistory.find(params[:id])
-    assign_history.change_completed
-
-    # if assign_history.completed
-    if assign_history.completed
-      render json: { message: "change completed", result: true }
+    result = ::Services::Tasks::Completed.new.call(completed_params, @current_account)
+    if result.success?
+      render json: { message: result.message, result: true }, status: result.status
     else
-      render json: { message: "change failed", result: false }
+      render json: { message: "change failed", result: false, errors: result.errors }, status: result.status
     end
   end
 
@@ -126,6 +123,10 @@ class Api::TasksController < ApplicationController
 
     def tag_params
       { task_id: params[:id], tag_id: params[:tag_id] }
+    end
+
+    def completed_params
+      { id: params[:id] }
     end
 
     def complete_params

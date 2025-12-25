@@ -272,4 +272,62 @@ RSpec.describe Services::Tasks::Repository, type: :service do
       end
     end
   end
+
+  describe "#find_assign_history_with_lock" do
+    let!(:task) { create(:task, area:) }
+    let!(:account) { create(:account) }
+    let!(:assign_cycle) { create(:assign_cycle, task:) }
+    let!(:assign_history) { create(:assign_history, assign_cycle:, account:) }
+
+    context "存在するIDの場合" do
+      it "AssignHistoryを返すこと" do
+        result = repository.find_assign_history_with_lock(assign_history.id)
+        expect(result).to eq(assign_history)
+      end
+    end
+
+    context "存在しないIDの場合" do
+      it "nilを返すこと" do
+        result = repository.find_assign_history_with_lock(999999)
+        expect(result).to be_nil
+      end
+    end
+  end
+
+  describe "#complete_assign_history" do
+    let!(:task) { create(:task, area:) }
+    let!(:account) { create(:account) }
+    let!(:assign_cycle) { create(:assign_cycle, task:) }
+    let!(:assign_history) { create(:assign_history, assign_cycle:, account:, completed: false) }
+
+    it "trueを返すこと" do
+      result = repository.complete_assign_history(assign_history)
+      expect(result).to be true
+    end
+
+    it "completedがtrueに更新されること" do
+      repository.complete_assign_history(assign_history)
+      expect(assign_history.reload.completed).to be true
+    end
+
+    it "completed_atが設定されること" do
+      repository.complete_assign_history(assign_history)
+      expect(assign_history.reload.completed_at).not_to be_nil
+    end
+  end
+
+  describe "#deactivate_cycle" do
+    let!(:task) { create(:task, area:) }
+    let!(:assign_cycle) { create(:assign_cycle, task:, is_active: true) }
+
+    it "trueを返すこと" do
+      result = repository.deactivate_cycle(assign_cycle)
+      expect(result).to be true
+    end
+
+    it "is_activeがfalseに更新されること" do
+      repository.deactivate_cycle(assign_cycle)
+      expect(assign_cycle.reload.is_active).to be false
+    end
+  end
 end
