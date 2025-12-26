@@ -28,11 +28,11 @@ Controller → Contract → Service → Repository → Model
 | Areas | 5/5 | 0 | ✅ 完了 |
 | Comments | 5/5 | 0 | ✅ 完了 |
 | Tags | 5/5 | 0 | ✅ 完了 |
-| Assigns | 0/1 | 1 | ⬜ 未着手 |
+| Assigns | 1/1 | 0 | ✅ 完了 |
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 35/40 (88%)**
+**合計: 36/40 (90%)**
 
 ---
 
@@ -273,8 +273,28 @@ Controller → Contract → Service → Repository → Model
 
 ## Phase 5: 中間テーブル操作 (優先度: 低)
 
-### Assigns
-- [ ] `POST /api/tasks/assign/cycle` (cycle_create)
+### Assigns ✅ - PR #78
+- [x] `POST /api/tasks/assign/cycle` (cycle_create)
+  - Contract: `Contracts::Assigns::CycleCreate`
+  - Service: `Services::Assigns::CycleCreate`
+  - Repository: `find_task_with_lock`, `deactivate_all_cycles`, `create_cycle`
+  - Presenter: `AssignCyclePresenter.render_cycle`
+  - Policy: `AccountPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+  - トランザクション + 悲観ロック
+  - 既存サイクル非活性化 + 自動割り当て実行
+  - AssignCycle#assign を `.save!` に修正（サイレントエラー防止）
+
+作成ファイル:
+- `app/contracts/assigns/cycle_create.rb`
+- `app/services/assigns/cycle_create.rb`, `repository.rb`, `result.rb`
+- `app/presenters/assign_cycle_presenter.rb`
+
+エラーハンドリング:
+- `Deadlocked`, `LockWaitTimeout` → 503 Service Unavailable
+- `RecordInvalid` → 422 Unprocessable Entity（詳細メッセージ付き）
+- `StatementInvalid` → 500 Internal Server Error
+- nil cycle → ArgumentError（Controller/Presenterで検出）
 
 ### AccountAreas
 - [ ] `POST /api/account_areas` (create)
@@ -348,6 +368,7 @@ Controller → Contract → Service → Repository → Model
 | `POST /api/tags` | 認証必須化、認可追加(admin_only) | #77 |
 | `PUT /api/tags/:id` | 認証必須化、認可追加(admin_only)、悲観ロック | #77 |
 | `DELETE /api/tags/:id` | 認証必須化、認可追加(admin_only)、悲観ロック、FK制約→409、レスポンス: message追加 | #77 |
+| `POST /api/tasks/assign/cycle` | 認証必須化、認可追加(admin_only)、悲観ロック、既存サイクル非活性化、自動割り当て実行、レスポンス: 200→201 | #78 |
 
 ---
 
@@ -392,6 +413,12 @@ Controller → Contract → Service → Repository → Model
 - `app/presenters/tag_presenter.rb`
 - `app/policies/tag_policy.rb`
 - 特徴: admin_only認可、ArgumentErrorパターン（Presenter）、FK制約エラー処理
+
+### Assigns CycleCreate
+- `app/contracts/assigns/cycle_create.rb`
+- `app/services/assigns/cycle_create.rb`, `repository.rb`, `result.rb`
+- `app/presenters/assign_cycle_presenter.rb`
+- 特徴: admin_only認可、悲観ロック、既存サイクル非活性化、自動割り当て、nil cycleガード
 
 ---
 
