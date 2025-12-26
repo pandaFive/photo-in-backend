@@ -84,6 +84,31 @@ RSpec.describe "Api::Assigns", type: :request do
         end
       end
 
+      context "assign_cycleキーが欠落している場合" do
+        it "Status 400が返ってくること" do
+          post "/api/tasks/assign/cycle",
+            params: { task_id: @task.id },
+            headers: admin_headers
+          expect(response).to have_http_status(:bad_request)
+        end
+
+        it "エラーメッセージが返ってくること" do
+          post "/api/tasks/assign/cycle",
+            params: { task_id: @task.id },
+            headers: admin_headers
+          json_response = JSON.parse(response.body)
+          expect(json_response["errors"]).to include("Bad request")
+        end
+
+        it "AssignCycleが作成されないこと" do
+          expect {
+            post "/api/tasks/assign/cycle",
+              params: { task_id: @task.id },
+              headers: admin_headers
+          }.not_to change(AssignCycle, :count)
+        end
+      end
+
       context "存在しないtask_idが指定された場合" do
         it "Status 404が返ってくること" do
           post "/api/tasks/assign/cycle",
