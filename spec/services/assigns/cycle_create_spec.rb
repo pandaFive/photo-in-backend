@@ -210,7 +210,7 @@ RSpec.describe Services::Assigns::CycleCreate, type: :service do
         result = service.call(valid_params, admin)
         expect(result.success?).to be false
         expect(result.status).to eq(:unprocessable_entity)
-        expect(result.errors).to include("サイクル作成に失敗しました")
+        expect(result.errors.first).to include("サイクル作成または割り当てに失敗しました")
       end
     end
 

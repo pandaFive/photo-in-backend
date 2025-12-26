@@ -7,7 +7,13 @@ class Api::AssignsController < ApplicationController
   # サイクルを作成し、自動割り当てを実行
   def cycle_create
     result = ::Services::Assigns::CycleCreate.new.call(cycle_create_params, @current_account)
-    render_result(result) { ::Presenters::AssignCyclePresenter.render_cycle(result.cycle) }
+    render_result(result) do
+      if result.cycle.nil?
+        Rails.logger.error "CycleCreate returned success but cycle is nil"
+        raise ArgumentError, "Unexpected nil cycle on success"
+      end
+      ::Presenters::AssignCyclePresenter.render_cycle(result.cycle)
+    end
   end
 
   private

@@ -69,8 +69,8 @@ module Services
         Rails.logger.error "Cycle create lock error: task_id=#{params.dig(:assign_cycle, :task_id) || params[:task_id]}, error=#{e.message}"
         failure(["サーバーが混雑しています。しばらくしてから再度お試しください"], :service_unavailable)
       rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.error "Cycle create save error: task_id=#{params.dig(:assign_cycle, :task_id) || params[:task_id]}, error=#{e.message}"
-        failure(["サイクル作成に失敗しました"], :unprocessable_entity)
+        Rails.logger.error "Cycle create/assign save error: task_id=#{params.dig(:assign_cycle, :task_id) || params[:task_id]}, error=#{e.message}"
+        failure(["サイクル作成または割り当てに失敗しました: #{e.record.errors.full_messages.join(', ')}"], :unprocessable_entity)
       rescue ActiveRecord::StatementInvalid => e
         Rails.logger.error "Cycle create DB error: #{e.message}"
         failure(["データベースエラーが発生しました"], :internal_server_error)
