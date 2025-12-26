@@ -6,7 +6,7 @@ RSpec.describe Services::Comments::Index, type: :model do
   let(:admin) { create(:account, role: "admin") }
   let(:member) { create(:account_member) }
   let(:area) { create(:area) }
-  let(:task) { create(:task, area: area) }
+  let(:task) { create(:task, area:) }
 
   describe "#call" do
     context "認証されていない場合" do
@@ -42,8 +42,8 @@ RSpec.describe Services::Comments::Index, type: :model do
 
     context "adminユーザーの場合" do
       before do
-        @admin_comment = create(:comment, account: admin, task: task, content: "Admin comment")
-        @member_comment = create(:comment, account: member, task: task, content: "Member comment")
+        @admin_comment = create(:comment, account: admin, task:, content: "Admin comment")
+        @member_comment = create(:comment, account: member, task:, content: "Member comment")
       end
 
       it "成功を返すこと" do
@@ -62,9 +62,9 @@ RSpec.describe Services::Comments::Index, type: :model do
       let(:other_member) { create(:account_member, name: "other_member") }
 
       before do
-        @admin_comment = create(:comment, account: admin, task: task, content: "Admin comment")
-        @member_comment = create(:comment, account: member, task: task, content: "Member comment")
-        @other_comment = create(:comment, account: other_member, task: task, content: "Other comment")
+        @admin_comment = create(:comment, account: admin, task:, content: "Admin comment")
+        @member_comment = create(:comment, account: member, task:, content: "Member comment")
+        @other_comment = create(:comment, account: other_member, task:, content: "Other comment")
       end
 
       it "成功を返すこと" do
@@ -94,6 +94,23 @@ RSpec.describe Services::Comments::Index, type: :model do
         result = described_class.new(repository: mock_repository).call({ task_id: task.id }, admin)
         expect(result.success?).to be false
         expect(result.status).to eq :internal_server_error
+        expect(result.errors).to include("データベースエラーが発生しました")
+      end
+    end
+
+    context "LockWaitTimeoutが発生した場合" do
+      let(:mock_repository) { instance_double(Services::Comments::Repository) }
+
+      before do
+        allow(mock_repository).to receive(:task_exists?).and_return(true)
+        allow(mock_repository).to receive(:get_comments_for_admin).and_raise(ActiveRecord::LockWaitTimeout)
+      end
+
+      it "service_unavailableを返すこと" do
+        result = described_class.new(repository: mock_repository).call({ task_id: task.id }, admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq :service_unavailable
+        expect(result.errors).to include("サーバーが混雑しています。しばらくしてから再試行してください。")
       end
     end
   end

@@ -37,6 +37,9 @@ module Services
         end
 
         Result.new(success?: true, comment:, errors: [], status: :ok)
+      rescue ActiveRecord::LockWaitTimeout => e
+        Rails.logger.error "Comment show lock timeout: #{e.message}"
+        failure(["サーバーが混雑しています。しばらくしてから再試行してください。"], :service_unavailable)
       rescue ActiveRecord::StatementInvalid => e
         Rails.logger.error "Comment show DB error: #{e.message}"
         failure(["データベースエラーが発生しました"], :internal_server_error)

@@ -54,6 +54,9 @@ module Services
       rescue ActiveRecord::Deadlocked, ActiveRecord::LockWaitTimeout => e
         Rails.logger.error "Comment create lock error: error=#{e.message}"
         failure(["サーバーが混雑しています。しばらくしてから再試行してください。"], :service_unavailable)
+      rescue ActiveRecord::InvalidForeignKey => e
+        Rails.logger.error "Comment create FK error: #{e.message}"
+        failure(["関連するタスクまたはアカウントが存在しません"], :conflict)
       rescue ActiveRecord::StatementInvalid => e
         Rails.logger.error "Comment create DB error: #{e.message}"
         failure(["データベースエラーが発生しました"], :internal_server_error)

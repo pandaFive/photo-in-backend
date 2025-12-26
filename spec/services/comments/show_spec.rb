@@ -7,11 +7,11 @@ RSpec.describe Services::Comments::Show, type: :model do
   let(:member) { create(:account_member) }
   let(:other_member) { create(:account_member, name: "other_member") }
   let(:area) { create(:area) }
-  let(:task) { create(:task, area: area) }
+  let(:task) { create(:task, area:) }
 
   describe "#call" do
     context "認証されていない場合" do
-      let(:comment) { create(:comment, account: member, task: task) }
+      let(:comment) { create(:comment, account: member, task:) }
 
       it "unauthorizedを返すこと" do
         result = described_class.new.call({ id: comment.id }, nil)
@@ -44,7 +44,7 @@ RSpec.describe Services::Comments::Show, type: :model do
     end
 
     context "adminユーザーの場合" do
-      let(:member_comment) { create(:comment, account: member, task: task) }
+      let(:member_comment) { create(:comment, account: member, task:) }
 
       it "他のユーザーのコメントを閲覧できること" do
         result = described_class.new.call({ id: member_comment.id }, admin)
@@ -56,7 +56,7 @@ RSpec.describe Services::Comments::Show, type: :model do
 
     context "memberユーザーの場合" do
       context "自分のコメントの場合" do
-        let(:own_comment) { create(:comment, account: member, task: task) }
+        let(:own_comment) { create(:comment, account: member, task:) }
 
         it "閲覧できること" do
           result = described_class.new.call({ id: own_comment.id }, member)
@@ -66,7 +66,7 @@ RSpec.describe Services::Comments::Show, type: :model do
       end
 
       context "adminのコメントの場合" do
-        let(:admin_comment) { create(:comment, account: admin, task: task) }
+        let(:admin_comment) { create(:comment, account: admin, task:) }
 
         it "閲覧できること" do
           result = described_class.new.call({ id: admin_comment.id }, member)
@@ -76,7 +76,7 @@ RSpec.describe Services::Comments::Show, type: :model do
       end
 
       context "他のmemberのコメントの場合" do
-        let(:other_comment) { create(:comment, account: other_member, task: task) }
+        let(:other_comment) { create(:comment, account: other_member, task:) }
 
         it "閲覧できないこと" do
           result = described_class.new.call({ id: other_comment.id }, member)
@@ -84,6 +84,36 @@ RSpec.describe Services::Comments::Show, type: :model do
           expect(result.status).to eq :forbidden
           expect(result.errors).to include("このコメントを閲覧する権限がありません")
         end
+      end
+    end
+
+    context "LockWaitTimeoutが発生した場合" do
+      let(:mock_repository) { instance_double(Services::Comments::Repository) }
+
+      before do
+        allow(mock_repository).to receive(:find_by_id).and_raise(ActiveRecord::LockWaitTimeout)
+      end
+
+      it "service_unavailableを返すこと" do
+        result = described_class.new(repository: mock_repository).call({ id: 1 }, admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq :service_unavailable
+        expect(result.errors).to include("サーバーが混雑しています。しばらくしてから再試行してください。")
+      end
+    end
+
+    context "StatementInvalidが発生した場合" do
+      let(:mock_repository) { instance_double(Services::Comments::Repository) }
+
+      before do
+        allow(mock_repository).to receive(:find_by_id).and_raise(ActiveRecord::StatementInvalid)
+      end
+
+      it "internal_server_errorを返すこと" do
+        result = described_class.new(repository: mock_repository).call({ id: 1 }, admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq :internal_server_error
+        expect(result.errors).to include("データベースエラーが発生しました")
       end
     end
   end
