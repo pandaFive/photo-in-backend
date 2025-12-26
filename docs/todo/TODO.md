@@ -26,13 +26,13 @@ Controller → Contract → Service → Repository → Model
 | Authentications | 1/1 | 0 | ✅ 完了 |
 | Tasks | 13/13 | 0 | ✅ 完了 |
 | Areas | 5/5 | 0 | ✅ 完了 |
-| Comments | 0/5 | 5 | ⬜ 未着手 |
+| Comments | 5/5 | 0 | ✅ 完了 |
 | Tags | 0/4 | 4 | ⬜ 未着手 |
 | Assigns | 0/1 | 1 | ⬜ 未着手 |
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 25/39 (64%)**
+**合計: 30/39 (77%)**
 
 ---
 
@@ -164,18 +164,58 @@ Controller → Contract → Service → Repository → Model
 
 ---
 
-## Phase 3: Comments コントローラー (優先度: 中)
+## Phase 3: Comments コントローラー完了 (優先度: 中)
 
-- [ ] `GET /api/comments` (index)
-- [ ] `GET /api/comments/:id` (show)
-- [ ] `POST /api/comments` (create)
-- [ ] `PUT /api/comments/:id` (update)
-- [ ] `DELETE /api/comments/:id` (destroy)
+### 移行済み ✅ - PR #76
+- [x] `GET /api/comments` (index)
+  - Contract: `Contracts::Comments::Index`
+  - Service: `Services::Comments::Index`
+  - Repository: `task_exists?`, `get_comments_for_admin`, `get_comments_for_member`
+  - Presenter: `CommentPresenter.render_comments`
+  - 認証必須化
+  - 認可: admin=全コメント / member=自分+adminのコメントのみ
+- [x] `GET /api/comments/:id` (show)
+  - Contract: `Contracts::Comments::Show` (継承: IdContract)
+  - Service: `Services::Comments::Show`
+  - Repository: `find_by_id`
+  - Presenter: `CommentPresenter.render_comment`
+  - Policy: `CommentPolicy#can_view?`
+  - 認証必須化、認可追加
+- [x] `POST /api/comments` (create)
+  - Contract: `Contracts::Comments::Create`
+  - Service: `Services::Comments::Create`
+  - Repository: `task_exists?`, `build`, `save`, `find_by_id`
+  - Presenter: `CommentPresenter.render_comment`
+  - 認証必須化
+  - account_id 自動設定（なりすまし防止）
+  - 例外処理: Deadlocked, LockWaitTimeout, RecordNotUnique, InvalidForeignKey, StatementInvalid
+- [x] `PUT /api/comments/:id` (update)
+  - Contract: `Contracts::Comments::Update`
+  - Service: `Services::Comments::Update`
+  - Repository: `find_by_id_with_lock`, `update`, `find_by_id`
+  - Presenter: `CommentPresenter.render_comment`
+  - Policy: `CommentPolicy#can_modify?`
+  - 認証必須化、認可追加（admin + 所有者）
+  - トランザクション + 悲観ロック
+- [x] `DELETE /api/comments/:id` (destroy)
+  - Contract: `Contracts::Comments::Destroy` (継承: IdContract)
+  - Service: `Services::Comments::Destroy`
+  - Repository: `find_by_id_with_lock`, `destroy`
+  - Policy: `CommentPolicy#can_modify?`
+  - 認証必須化、認可追加（admin + 所有者）
+  - トランザクション + 悲観ロック
 
-必要なファイル:
-- `app/contracts/comments/`
-- `app/services/comments/`
+作成ファイル:
+- `app/contracts/comments/` - id_contract, index, show, destroy, create, update
+- `app/services/comments/` - index, show, create, update, destroy, repository, result
+- `app/policies/comment_policy.rb`
 - `app/presenters/comment_presenter.rb`
+
+エラーハンドリング:
+- `Deadlocked`, `LockWaitTimeout` → 503 Service Unavailable
+- `RecordNotUnique`, `InvalidForeignKey` → 409 Conflict
+- `StatementInvalid` → 500 Internal Server Error
+- nil チェック + 警告ログ（Presenter, Policy）
 
 ---
 
@@ -260,6 +300,11 @@ Controller → Contract → Service → Repository → Model
 | `POST /api/areas` | 認証必須化、認可追加(admin_only) | #75 |
 | `PUT /api/areas/:id` | 認証必須化、認可追加(admin_only)、悲観ロック | #75 |
 | `DELETE /api/areas/:id` | 認証必須化、認可追加(admin_only)、悲観ロック、FK制約→409 | #75 |
+| `GET /api/comments` | 認証必須化、認可追加(admin=全部/member=自分+admin) | #76 |
+| `GET /api/comments/:id` | 認証必須化、認可追加(admin/所有者/adminコメント) | #76 |
+| `POST /api/comments` | 認証必須化、account_id自動設定、Presenter経由レスポンス | #76 |
+| `PUT /api/comments/:id` | 認証必須化、認可追加(admin+所有者)、悲観ロック | #76 |
+| `DELETE /api/comments/:id` | 認証必須化、認可追加(admin+所有者)、悲観ロック、レスポンス: message追加 | #76 |
 
 ---
 
@@ -288,6 +333,14 @@ Controller → Contract → Service → Repository → Model
 - `app/services/areas/repository.rb`, `result.rb`
 - `app/presenters/area_presenter.rb`
 - `app/policies/area_policy.rb`
+
+### Comments CRUD
+- `app/contracts/comments/id_contract.rb`, `index.rb`, `show.rb`, `destroy.rb`, `create.rb`, `update.rb`
+- `app/services/comments/index.rb`, `show.rb`, `create.rb`, `update.rb`, `destroy.rb`
+- `app/services/comments/repository.rb`, `result.rb`
+- `app/presenters/comment_presenter.rb`
+- `app/policies/comment_policy.rb`
+- 特徴: 複合認可ルール（admin/所有者/adminコメント閲覧可）、包括的例外処理
 
 ---
 
