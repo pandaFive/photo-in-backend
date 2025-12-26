@@ -10,7 +10,7 @@ module Services
         @repository = repository
       end
 
-      # @param params [Hash] { id: Integer }
+      # @param params [Hash] { id: String|Integer } IDパラメータ
       # @param current_account [Account, nil] 現在のログインユーザー
       # @return [Result]
       def call(params, current_account)

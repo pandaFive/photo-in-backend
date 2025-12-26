@@ -6,16 +6,18 @@ module Services
     #
     # 認可: admin のみ
     # 同時更新防止: 悲観ロック
-    # FK制約: tag_accounts 関連があれば削除不可
+    # FK制約: tag_accounts または tag_tasks 関連があれば削除不可
     class Destroy
       def initialize(repository: Repository.new)
         @repository = repository
       end
 
-      # @param params [Hash] { id: Integer }
+      # @param params [Hash] { id: String|Integer } IDパラメータ
       # @param current_account [Account, nil] 現在のログインユーザー
       # @return [Result]
       def call(params, current_account)
+        tag_id = nil # rescue block用に事前初期化
+
         return failure(["認証が必要です"], :unauthorized) if current_account.nil?
 
         validation = ::Contracts::Tags::Destroy.call(params)
@@ -48,8 +50,8 @@ module Services
           Result.new(success?: true, message: "deleted", errors: [], status: :ok)
         end
       rescue ActiveRecord::InvalidForeignKey => e
-        Rails.logger.error "Tag destroy failed (FK constraint): id=#{tag_id}, error=#{e.message}"
-        failure(["このタグにはアカウントが関連付けられているため削除できません"], :conflict)
+        Rails.logger.error "Tag destroy failed (FK constraint): id=#{tag_id || 'unknown'}, error=#{e.message}"
+        failure(["このタグにはアカウントまたはタスクが関連付けられているため削除できません"], :conflict)
       rescue ActiveRecord::LockWaitTimeout, ActiveRecord::Deadlocked => e
         Rails.logger.error "Tag destroy lock timeout: #{e.message}"
         failure(["サーバーが混雑しています。しばらくしてから再度お試しください"], :service_unavailable)

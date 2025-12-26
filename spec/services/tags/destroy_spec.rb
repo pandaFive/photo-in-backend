@@ -87,7 +87,7 @@ RSpec.describe Services::Tags::Destroy, type: :service do
 
           expect(result.success?).to be false
           expect(result.status).to eq(:conflict)
-          expect(result.errors.first).to include("アカウントが関連付けられている")
+          expect(result.errors.first).to include("アカウントまたはタスクが関連付けられている")
         end
 
         it "タグが削除されないこと" do

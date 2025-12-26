@@ -10,7 +10,7 @@ module Services
         @repository = repository
       end
 
-      # @param params [Hash] { tag: { name: String } }
+      # @param params [Hash] { tag: { name: String } } または { name: String }
       # @param current_account [Account, nil] 現在のログインユーザー
       # @return [Result]
       def call(params, current_account)
