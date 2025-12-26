@@ -3,187 +3,307 @@
 require "rails_helper"
 
 RSpec.describe "Api::Comments", type: :request do
+  let(:admin) { create(:account) }
+  let(:member) { create(:account_member) }
+  let(:other_member) { create(:account_member, name: "other_member") }
+  let(:area) { create(:area) }
+  let(:task) { create(:task, area_id: area.id) }
+
+  let(:admin_headers) { { "Authorization" => "Bearer #{JsonWebToken.encode(account_id: admin.id)}" } }
+  let(:member_headers) { { "Authorization" => "Bearer #{JsonWebToken.encode(account_id: member.id)}" } }
+  let(:other_member_headers) { { "Authorization" => "Bearer #{JsonWebToken.encode(account_id: other_member.id)}" } }
+
   describe "GET /api/comments" do
     before do
-      @admin = create(:account)
-      @member = create(:account_member)
-      @area = create(:area)
-      @task = create(:task, area_id: @area.id)
-      @admin_comment = create(:comment, account: @admin, task: @task, content: "管理者コメント")
-      @member_comment = create(:comment, account: @member, task: @task, content: "メンバーコメント")
+      @admin_comment = create(:comment, account: admin, task: task, content: "管理者コメント")
+      @member_comment = create(:comment, account: member, task: task, content: "メンバーコメント")
+      @other_comment = create(:comment, account: other_member, task: task, content: "他メンバーコメント")
+    end
+
+    context "認証なしの場合" do
+      it "Status 401が返ってくること" do
+        get "/api/comments", params: { taskId: task.id }
+        expect(response).to have_http_status(:unauthorized)
+      end
     end
 
     context "adminユーザーがアクセスする場合" do
       it "Status 200が返ってくること" do
-        get "/api/comments", params: { taskId: @task.id, accountId: @admin.id }
+        get "/api/comments", params: { taskId: task.id }, headers: admin_headers
         expect(response).to have_http_status(:ok)
       end
 
       it "全てのコメントが返ってくること" do
-        get "/api/comments", params: { taskId: @task.id, accountId: @admin.id }
+        get "/api/comments", params: { taskId: task.id }, headers: admin_headers
         json_response = JSON.parse(response.body)
-        expect(json_response.length).to eq(2)
+        expect(json_response.length).to eq(3)
       end
 
       it "正しい形式のデータが返ってくること" do
-        get "/api/comments", params: { taskId: @task.id, accountId: @admin.id }
+        get "/api/comments", params: { taskId: task.id }, headers: admin_headers
         json_response = JSON.parse(response.body)
         expect(json_response[0]).to have_key("id")
         expect(json_response[0]).to have_key("content")
-        expect(json_response[0]).to have_key("name")
+        expect(json_response[0]).to have_key("account_name")
+        expect(json_response[0]).to have_key("account_role")
+        expect(json_response[0]).to have_key("updated_at")
       end
     end
 
     context "memberユーザーがアクセスする場合" do
       it "Status 200が返ってくること" do
-        get "/api/comments", params: { taskId: @task.id, accountId: @member.id }
+        get "/api/comments", params: { taskId: task.id }, headers: member_headers
         expect(response).to have_http_status(:ok)
       end
 
       it "自分とadminのコメントのみが返ってくること" do
-        other_member = create(:account_member, name: "other_member")
-        create(:comment, account: other_member, task: @task, content: "他メンバーコメント")
-
-        get "/api/comments", params: { taskId: @task.id, accountId: @member.id }
+        get "/api/comments", params: { taskId: task.id }, headers: member_headers
         json_response = JSON.parse(response.body)
         # 自分のコメント + adminのコメントのみ（他メンバーは含まない）
         expect(json_response.length).to eq(2)
+        ids = json_response.map { |c| c["id"] }
+        expect(ids).to include(@admin_comment.id, @member_comment.id)
+        expect(ids).not_to include(@other_comment.id)
+      end
+    end
+
+    context "taskIdがない場合" do
+      it "Status 422が返ってくること" do
+        get "/api/comments", params: {}, headers: admin_headers
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "存在しないtaskIdの場合" do
+      it "Status 404が返ってくること" do
+        get "/api/comments", params: { taskId: 999999 }, headers: admin_headers
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
 
   describe "GET /api/comments/:id" do
-    before do
-      @member = create(:account_member)
-      @area = create(:area)
-      @task = create(:task, area_id: @area.id)
-      @comment = create(:comment, account: @member, task: @task, content: "テストコメント")
+    let(:member_comment) { create(:comment, account: member, task: task, content: "テストコメント") }
+
+    context "認証なしの場合" do
+      it "Status 401が返ってくること" do
+        get "/api/comments/#{member_comment.id}"
+        expect(response).to have_http_status(:unauthorized)
+      end
     end
 
-    context "存在するコメントの場合" do
+    context "所有者がアクセスする場合" do
       it "Status 200が返ってくること" do
-        get "/api/comments/#{@comment.id}"
+        get "/api/comments/#{member_comment.id}", headers: member_headers
         expect(response).to have_http_status(:ok)
       end
 
       it "正しいデータが返ってくること" do
-        get "/api/comments/#{@comment.id}"
+        get "/api/comments/#{member_comment.id}", headers: member_headers
         json_response = JSON.parse(response.body)
-        expect(json_response["id"]).to eq(@comment.id)
+        expect(json_response["id"]).to eq(member_comment.id)
         expect(json_response["content"]).to eq("テストコメント")
+      end
+    end
+
+    context "adminがアクセスする場合" do
+      it "Status 200が返ってくること" do
+        get "/api/comments/#{member_comment.id}", headers: admin_headers
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "他のmemberがアクセスする場合" do
+      it "Status 403が返ってくること" do
+        get "/api/comments/#{member_comment.id}", headers: other_member_headers
+        expect(response).to have_http_status(:forbidden)
       end
     end
 
     context "存在しないコメントの場合" do
       it "Status 404が返ってくること" do
-        get "/api/comments/999999"
+        get "/api/comments/999999", headers: admin_headers
         expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context "無効なIDフォーマットの場合" do
+      it "文字列IDでStatus 422が返ってくること" do
+        get "/api/comments/abc", headers: admin_headers
+        expect(response).to have_http_status(:unprocessable_entity)
       end
     end
   end
 
   describe "POST /api/comments" do
-    before do
-      @member = create(:account_member)
-      @area = create(:area)
-      @task = create(:task, area_id: @area.id)
+    context "認証なしの場合" do
+      it "Status 401が返ってくること" do
+        post "/api/comments", params: { comment: { content: "新規コメント", task_id: task.id } }
+        expect(response).to have_http_status(:unauthorized)
+      end
     end
 
     context "有効なパラメータの場合" do
-      it "Status 200が返ってくること" do
-        post "/api/comments", params: { comment: { content: "新規コメント", task_id: @task.id, account_id: @member.id } }
-        expect(response).to have_http_status(:ok)
+      it "Status 201が返ってくること" do
+        post "/api/comments", params: { comment: { content: "新規コメント", task_id: task.id } }, headers: member_headers
+        expect(response).to have_http_status(:created)
       end
 
       it "コメントが作成されること" do
         expect {
-          post "/api/comments", params: { comment: { content: "新規コメント", task_id: @task.id, account_id: @member.id } }
+          post "/api/comments", params: { comment: { content: "新規コメント", task_id: task.id } }, headers: member_headers
         }.to change(Comment, :count).by(1)
       end
 
       it "作成されたデータが返ってくること" do
-        post "/api/comments", params: { comment: { content: "新規コメント", task_id: @task.id, account_id: @member.id } }
+        post "/api/comments", params: { comment: { content: "新規コメント", task_id: task.id } }, headers: member_headers
         json_response = JSON.parse(response.body)
         expect(json_response["content"]).to eq("新規コメント")
+        expect(json_response["account_id"]).to eq(member.id)
+        expect(json_response["account_name"]).to eq(member.name)
       end
     end
 
-    context "無効なパラメータの場合" do
-      # Note: Comment modelにcontentのバリデーションがないため、空でも保存される
-      # 将来的にバリデーション追加時はこのテストを更新する
-      it "contentが空の場合でも保存されること（バリデーションなし）" do
-        post "/api/comments", params: { comment: { content: "", task_id: @task.id, account_id: @member.id } }
-        expect(response).to have_http_status(:ok)
+    context "contentが空の場合" do
+      it "Status 422が返ってくること" do
+        post "/api/comments", params: { comment: { content: "", task_id: task.id } }, headers: member_headers
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "task_idがない場合" do
+      it "Status 422が返ってくること" do
+        post "/api/comments", params: { comment: { content: "テスト" } }, headers: member_headers
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    context "存在しないtask_idの場合" do
+      it "Status 404が返ってくること" do
+        post "/api/comments", params: { comment: { content: "テスト", task_id: 999999 } }, headers: member_headers
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
 
   describe "PUT /api/comments/:id" do
-    before do
-      @member = create(:account_member)
-      @area = create(:area)
-      @task = create(:task, area_id: @area.id)
-      @comment = create(:comment, account: @member, task: @task, content: "元のコメント")
+    let(:member_comment) { create(:comment, account: member, task: task, content: "元のコメント") }
+
+    context "認証なしの場合" do
+      it "Status 401が返ってくること" do
+        put "/api/comments/#{member_comment.id}", params: { comment: { content: "更新" } }
+        expect(response).to have_http_status(:unauthorized)
+      end
     end
 
-    context "有効なパラメータの場合" do
+    context "所有者が更新する場合" do
       it "Status 200が返ってくること" do
-        put "/api/comments/#{@comment.id}", params: { comment: { content: "更新後のコメント" } }
+        put "/api/comments/#{member_comment.id}", params: { comment: { content: "更新後のコメント" } }, headers: member_headers
         expect(response).to have_http_status(:ok)
       end
 
       it "更新されたデータが返ってくること" do
-        put "/api/comments/#{@comment.id}", params: { comment: { content: "更新後のコメント" } }
+        put "/api/comments/#{member_comment.id}", params: { comment: { content: "更新後のコメント" } }, headers: member_headers
         json_response = JSON.parse(response.body)
         expect(json_response["content"]).to eq("更新後のコメント")
       end
 
       it "DBが更新されていること" do
-        put "/api/comments/#{@comment.id}", params: { comment: { content: "更新後のコメント" } }
-        @comment.reload
-        expect(@comment.content).to eq("更新後のコメント")
+        put "/api/comments/#{member_comment.id}", params: { comment: { content: "更新後のコメント" } }, headers: member_headers
+        member_comment.reload
+        expect(member_comment.content).to eq("更新後のコメント")
+      end
+    end
+
+    context "adminが更新する場合" do
+      it "Status 200が返ってくること" do
+        put "/api/comments/#{member_comment.id}", params: { comment: { content: "Admin更新" } }, headers: admin_headers
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "他のmemberが更新する場合" do
+      it "Status 403が返ってくること" do
+        put "/api/comments/#{member_comment.id}", params: { comment: { content: "更新" } }, headers: other_member_headers
+        expect(response).to have_http_status(:forbidden)
       end
     end
 
     context "存在しないコメントの場合" do
       it "Status 404が返ってくること" do
-        put "/api/comments/999999", params: { comment: { content: "更新" } }
+        put "/api/comments/999999", params: { comment: { content: "更新" } }, headers: admin_headers
         expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context "無効なIDフォーマットの場合" do
+      it "文字列IDでStatus 422が返ってくること" do
+        put "/api/comments/abc", params: { comment: { content: "更新" } }, headers: admin_headers
+        expect(response).to have_http_status(:unprocessable_entity)
       end
     end
   end
 
   describe "DELETE /api/comments/:id" do
-    before do
-      @member = create(:account_member)
-      @area = create(:area)
-      @task = create(:task, area_id: @area.id)
-      @comment = create(:comment, account: @member, task: @task)
+    context "認証なしの場合" do
+      let!(:comment) { create(:comment, account: member, task: task) }
+
+      it "Status 401が返ってくること" do
+        delete "/api/comments/#{comment.id}"
+        expect(response).to have_http_status(:unauthorized)
+      end
     end
 
-    context "存在するコメントの場合" do
+    context "所有者が削除する場合" do
+      let!(:member_comment) { create(:comment, account: member, task: task) }
+
       it "Status 200が返ってくること" do
-        delete "/api/comments/#{@comment.id}"
+        delete "/api/comments/#{member_comment.id}", headers: member_headers
         expect(response).to have_http_status(:ok)
       end
 
       it "成功メッセージが返ってくること" do
-        delete "/api/comments/#{@comment.id}"
+        delete "/api/comments/#{member_comment.id}", headers: member_headers
         json_response = JSON.parse(response.body)
-        expect(json_response["message"]).to eq("complete")
+        expect(json_response["message"]).to eq("deleted")
       end
 
       it "コメントが削除されること" do
         expect {
-          delete "/api/comments/#{@comment.id}"
+          delete "/api/comments/#{member_comment.id}", headers: member_headers
         }.to change(Comment, :count).by(-1)
+      end
+    end
+
+    context "adminが削除する場合" do
+      let!(:member_comment) { create(:comment, account: member, task: task) }
+
+      it "Status 200が返ってくること" do
+        delete "/api/comments/#{member_comment.id}", headers: admin_headers
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "他のmemberが削除する場合" do
+      let!(:member_comment) { create(:comment, account: member, task: task) }
+
+      it "Status 403が返ってくること" do
+        delete "/api/comments/#{member_comment.id}", headers: other_member_headers
+        expect(response).to have_http_status(:forbidden)
       end
     end
 
     context "存在しないコメントの場合" do
       it "Status 404が返ってくること" do
-        delete "/api/comments/999999"
+        delete "/api/comments/999999", headers: admin_headers
         expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context "無効なIDフォーマットの場合" do
+      it "文字列IDでStatus 422が返ってくること" do
+        delete "/api/comments/abc", headers: admin_headers
+        expect(response).to have_http_status(:unprocessable_entity)
       end
     end
   end

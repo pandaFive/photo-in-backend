@@ -1,51 +1,51 @@
 # frozen_string_literal: true
 
 class Api::CommentsController < ApplicationController
-  def index
-    comments = Comment.get_member_comments(params[:taskId], params[:accountId])
+  before_action :authenticated?
 
-    render json: comments
+  def index
+    result = ::Services::Comments::Index.new.call(index_params, @current_account)
+    render_result(result) { ::Presenters::CommentPresenter.render_comments(result.comments) }
   end
 
   def show
-    comment = Comment.find(params[:id])
-
-    render json: comment
+    result = ::Services::Comments::Show.new.call(show_params, @current_account)
+    render_result(result) { ::Presenters::CommentPresenter.render_comment(result.comment) }
   end
 
   def create
-    comment = Comment.new(create_params)
-
-    if comment.save
-      render json: comment.mutate_render[0]
-    else
-      render json: { message: comment.errors, status: 422 }, status: :unprocessable_entity
-    end
+    result = ::Services::Comments::Create.new.call(create_params, @current_account)
+    render_result(result) { ::Presenters::CommentPresenter.render_comment(result.comment) }
   end
 
   def update
-    comment = Comment.find(params[:id])
-    comment.update(update_params)
-
-    render json: comment
+    result = ::Services::Comments::Update.new.call(update_params, @current_account)
+    render_result(result) { ::Presenters::CommentPresenter.render_comment(result.comment) }
   end
 
   def destroy
-    comment = Comment.find(params[:id])
-
-    if comment.destroy
-      render json: { message: "complete" }, status: 200
-    else
-      render json: { message: "Delete failed" }, status: 400
-    end
+    result = ::Services::Comments::Destroy.new.call(destroy_params, @current_account)
+    render_result(result) { { message: result.message } }
   end
 
   private
+    def index_params
+      { task_id: params[:taskId] }
+    end
+
+    def show_params
+      { id: params[:id] }
+    end
+
     def create_params
-      params.require(:comment).permit(:content, :task_id, :account_id)
+      { comment: params.require(:comment).permit(:content, :task_id) }
     end
 
     def update_params
-      params.require(:comment).permit(:content, :task_id, :account_id)
+      { id: params[:id], comment: params.require(:comment).permit(:content) }
+    end
+
+    def destroy_params
+      { id: params[:id] }
     end
 end
