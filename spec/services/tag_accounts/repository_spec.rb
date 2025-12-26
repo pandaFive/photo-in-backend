@@ -93,22 +93,47 @@ RSpec.describe Services::TagAccounts::Repository, type: :service do
   end
 
   describe "#remove_tag" do
-    before { account.tags << tag }
+    context "タグが紐付いている場合" do
+      before { account.tags << tag }
 
-    it "trueを返すこと" do
-      result = repository.remove_tag(account, tag)
-      expect(result).to be true
-    end
+      it "trueを返すこと" do
+        result = repository.remove_tag(account, tag)
+        expect(result).to be true
+      end
 
-    it "タグが削除されること" do
-      repository.remove_tag(account, tag)
-      expect(account.tags).not_to include(tag)
-    end
-
-    it "TagAccountレコードが削除されること" do
-      expect {
+      it "タグが削除されること" do
         repository.remove_tag(account, tag)
-      }.to change(TagAccount, :count).by(-1)
+        expect(account.tags).not_to include(tag)
+      end
+
+      it "TagAccountレコードが削除されること" do
+        expect {
+          repository.remove_tag(account, tag)
+        }.to change(TagAccount, :count).by(-1)
+      end
+    end
+
+    context "RecordNotDestroyedが発生した場合" do
+      before do
+        account.tags << tag
+        allow(account.tags).to receive(:destroy).and_raise(ActiveRecord::RecordNotDestroyed.new("Cannot destroy"))
+      end
+
+      it "falseを返すこと" do
+        result = repository.remove_tag(account, tag)
+        expect(result).to be false
+      end
+
+      it "例外を発生させないこと" do
+        expect { repository.remove_tag(account, tag) }.not_to raise_error
+      end
+    end
+
+    context "タグが紐付いていない場合" do
+      it "falseを返すこと" do
+        result = repository.remove_tag(account, tag)
+        expect(result).to be false
+      end
     end
   end
 

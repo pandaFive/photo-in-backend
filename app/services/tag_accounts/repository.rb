@@ -29,7 +29,8 @@ module Services
       # アカウントにタグを追加
       # @param account [Account]
       # @param tag [Tag]
-      # @return [Boolean] 追加成功時true、重複時false
+      # @return [Boolean] 追加成功時true、重複時（RecordNotUnique例外発生時）false
+      # @note レースコンディション対策としてRecordNotUniqueをキャッチ
       def add_tag(account, tag)
         account.tags << tag
         true
@@ -41,10 +42,14 @@ module Services
       # アカウントからタグを削除
       # @param account [Account]
       # @param tag [Tag]
-      # @return [Boolean] 削除成功時true、失敗時false
+      # @return [Boolean] 削除成功時true、RecordNotDestroyed例外発生時または削除対象がない場合false
       def remove_tag(account, tag)
-        result = account.tags.destroy(tag)
-        result.present?
+        # タグが紐付いていない場合はfalseを返す
+        return false unless account.tags.exists?(tag.id)
+
+        account.tags.destroy(tag)
+        # 削除後にタグが存在しないことを確認
+        !account.tags.exists?(tag.id)
       rescue ActiveRecord::RecordNotDestroyed => e
         Rails.logger.error "TagAccount remove_tag failed: account_id=#{account.id}, tag_id=#{tag.id}, error=#{e.message}"
         false
@@ -52,7 +57,7 @@ module Services
 
       # アカウントのタグ一覧を取得
       # @param account [Account]
-      # @return [Array<Tag>]
+      # @return [ActiveRecord::Associations::CollectionProxy<Tag>]
       def get_tags(account)
         account.tags
       end

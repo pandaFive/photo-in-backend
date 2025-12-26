@@ -154,6 +154,26 @@ RSpec.describe "Api::TagAccounts", type: :request do
         }.not_to change { target_account.tags.count }
       end
     end
+
+    context "無効なJWTトークンの場合" do
+      let(:invalid_token) { JWT.encode({ account_id: admin.id }, "wrong_secret", "HS256") }
+      let(:invalid_headers) { { "Authorization" => "Bearer #{invalid_token}" } }
+
+      it "Status 401が返ってくること" do
+        post "/api/tag_accounts",
+          params: { account_id: target_account.id, tag_id: tag.id },
+          headers: invalid_headers
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "タグが追加されないこと" do
+        expect {
+          post "/api/tag_accounts",
+            params: { account_id: target_account.id, tag_id: tag.id },
+            headers: invalid_headers
+        }.not_to change { target_account.tags.count }
+      end
+    end
   end
 
   describe "DELETE /api/tag_accounts/:id" do
@@ -281,6 +301,26 @@ RSpec.describe "Api::TagAccounts", type: :request do
         expect {
           delete "/api/tag_accounts/#{@tag_account.id}",
             params: { account_id: target_account.id, tag_id: tag.id }
+        }.not_to change { target_account.tags.count }
+      end
+    end
+
+    context "無効なJWTトークンの場合" do
+      let(:invalid_token) { JWT.encode({ account_id: admin.id }, "wrong_secret", "HS256") }
+      let(:invalid_headers) { { "Authorization" => "Bearer #{invalid_token}" } }
+
+      it "Status 401が返ってくること" do
+        delete "/api/tag_accounts/#{@tag_account.id}",
+          params: { account_id: target_account.id, tag_id: tag.id },
+          headers: invalid_headers
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "タグが削除されないこと" do
+        expect {
+          delete "/api/tag_accounts/#{@tag_account.id}",
+            params: { account_id: target_account.id, tag_id: tag.id },
+            headers: invalid_headers
         }.not_to change { target_account.tags.count }
       end
     end

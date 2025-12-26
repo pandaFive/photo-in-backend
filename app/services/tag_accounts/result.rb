@@ -6,7 +6,7 @@ module Services
     # @!attribute success?
     #   @return [Boolean] 操作が成功したかどうか
     # @!attribute tags
-    #   @return [Array<Tag>, nil] タグ一覧
+    #   @return [ActiveRecord::Associations::CollectionProxy<Tag>, nil] タグ一覧
     # @!attribute message
     #   @return [String, nil] 結果メッセージ
     # @!attribute errors
