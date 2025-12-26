@@ -27,12 +27,12 @@ Controller → Contract → Service → Repository → Model
 | Tasks | 13/13 | 0 | ✅ 完了 |
 | Areas | 5/5 | 0 | ✅ 完了 |
 | Comments | 5/5 | 0 | ✅ 完了 |
-| Tags | 0/4 | 4 | ⬜ 未着手 |
+| Tags | 5/5 | 0 | ✅ 完了 |
 | Assigns | 0/1 | 1 | ⬜ 未着手 |
 | AccountAreas | 0/2 | 2 | ⬜ 未着手 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 30/39 (77%)**
+**合計: 35/40 (88%)**
 
 ---
 
@@ -219,17 +219,55 @@ Controller → Contract → Service → Repository → Model
 
 ---
 
-## Phase 4: Tags コントローラー (優先度: 低)
+## Phase 4: Tags コントローラー完了 (優先度: 低)
 
-- [ ] `GET /api/tags` (index)
-- [ ] `POST /api/tags` (create)
-- [ ] `PUT /api/tags/:id` (update)
-- [ ] `DELETE /api/tags/:id` (destroy)
+### 移行済み ✅ - PR #77
+- [x] `GET /api/tags` (index)
+  - Service: `Services::Tags::Index`
+  - Repository: `all_tags`
+  - Presenter: `TagPresenter.render_tags`
+  - 認証必須化
+- [x] `GET /api/tags/:id` (show) ※新規追加
+  - Contract: `Contracts::Tags::Show` (継承: IdContract)
+  - Service: `Services::Tags::Show`
+  - Repository: `find_by_id`
+  - Presenter: `TagPresenter.render_tag`
+  - 認証必須化
+- [x] `POST /api/tags` (create)
+  - Contract: `Contracts::Tags::Create`
+  - Service: `Services::Tags::Create`
+  - Repository: `build`, `save`
+  - Presenter: `TagPresenter.render_tag`
+  - Policy: `TagPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+- [x] `PUT /api/tags/:id` (update)
+  - Contract: `Contracts::Tags::Update`
+  - Service: `Services::Tags::Update`
+  - Repository: `find_by_id_with_lock`, `update`
+  - Presenter: `TagPresenter.render_tag`
+  - Policy: `TagPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+  - トランザクション + 悲観ロック
+- [x] `DELETE /api/tags/:id` (destroy)
+  - Contract: `Contracts::Tags::Destroy` (継承: IdContract)
+  - Service: `Services::Tags::Destroy`
+  - Repository: `find_by_id_with_lock`, `destroy`
+  - Policy: `TagPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+  - トランザクション + 悲観ロック
+  - FK制約エラー処理（409 Conflict）
 
-必要なファイル:
-- `app/contracts/tags/`
-- `app/services/tags/`
+作成ファイル:
+- `app/contracts/tags/` - id_contract, show, destroy, create, update
+- `app/services/tags/` - index, show, create, update, destroy, repository, result
+- `app/policies/tag_policy.rb`
 - `app/presenters/tag_presenter.rb`
+
+エラーハンドリング:
+- `Deadlocked`, `LockWaitTimeout` → 503 Service Unavailable
+- `RecordNotUnique`, `InvalidForeignKey` → 409 Conflict
+- `StatementInvalid` → 500 Internal Server Error
+- ArgumentError（Presenterでnil受信時）
 
 ---
 
@@ -305,6 +343,11 @@ Controller → Contract → Service → Repository → Model
 | `POST /api/comments` | 認証必須化、account_id自動設定、Presenter経由レスポンス | #76 |
 | `PUT /api/comments/:id` | 認証必須化、認可追加(admin+所有者)、悲観ロック | #76 |
 | `DELETE /api/comments/:id` | 認証必須化、認可追加(admin+所有者)、悲観ロック、レスポンス: message追加 | #76 |
+| `GET /api/tags` | 認証必須化 | #77 |
+| `GET /api/tags/:id` | 新規追加、認証必須化 | #77 |
+| `POST /api/tags` | 認証必須化、認可追加(admin_only) | #77 |
+| `PUT /api/tags/:id` | 認証必須化、認可追加(admin_only)、悲観ロック | #77 |
+| `DELETE /api/tags/:id` | 認証必須化、認可追加(admin_only)、悲観ロック、FK制約→409、レスポンス: message追加 | #77 |
 
 ---
 
@@ -341,6 +384,14 @@ Controller → Contract → Service → Repository → Model
 - `app/presenters/comment_presenter.rb`
 - `app/policies/comment_policy.rb`
 - 特徴: 複合認可ルール（admin/所有者/adminコメント閲覧可）、包括的例外処理
+
+### Tags CRUD
+- `app/contracts/tags/id_contract.rb`, `show.rb`, `destroy.rb`, `create.rb`, `update.rb`
+- `app/services/tags/index.rb`, `show.rb`, `create.rb`, `update.rb`, `destroy.rb`
+- `app/services/tags/repository.rb`, `result.rb`
+- `app/presenters/tag_presenter.rb`
+- `app/policies/tag_policy.rb`
+- 特徴: admin_only認可、ArgumentErrorパターン（Presenter）、FK制約エラー処理
 
 ---
 
