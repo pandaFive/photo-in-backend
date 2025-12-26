@@ -29,21 +29,25 @@ module Services
       # アカウントにエリアを追加
       # @param account [Account]
       # @param area [Area]
-      # @return [Boolean] 追加成功時true
+      # @return [Boolean] 追加成功時true、重複時false
       def add_area(account, area)
         account.areas << area
         true
-      rescue ActiveRecord::RecordNotUnique
+      rescue ActiveRecord::RecordNotUnique => e
+        Rails.logger.warn "AccountArea add_area race condition: account_id=#{account.id}, area_id=#{area.id}, error=#{e.message}"
         false
       end
 
       # アカウントからエリアを削除
       # @param account [Account]
       # @param area [Area]
-      # @return [Boolean] 削除成功時true
+      # @return [Boolean] 削除成功時true、失敗時false
       def remove_area(account, area)
-        account.areas.destroy(area)
-        true
+        result = account.areas.destroy(area)
+        result.present?
+      rescue ActiveRecord::RecordNotDestroyed => e
+        Rails.logger.error "AccountArea remove_area failed: account_id=#{account.id}, area_id=#{area.id}, error=#{e.message}"
+        false
       end
 
       # アカウントのエリア一覧を取得

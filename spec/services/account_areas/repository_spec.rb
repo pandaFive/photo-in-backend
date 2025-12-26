@@ -75,6 +75,21 @@ RSpec.describe Services::AccountAreas::Repository, type: :service do
         }.to change(AccountArea, :count).by(1)
       end
     end
+
+    context "RecordNotUniqueが発生した場合" do
+      before do
+        allow(account.areas).to receive(:<<).and_raise(ActiveRecord::RecordNotUnique.new("Duplicate entry"))
+      end
+
+      it "falseを返すこと" do
+        result = repository.add_area(account, area)
+        expect(result).to be false
+      end
+
+      it "例外を発生させないこと" do
+        expect { repository.add_area(account, area) }.not_to raise_error
+      end
+    end
   end
 
   describe "#remove_area" do

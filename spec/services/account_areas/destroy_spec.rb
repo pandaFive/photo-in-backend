@@ -111,6 +111,38 @@ RSpec.describe Services::AccountAreas::Destroy, type: :service do
         expect(repository).to have_received(:remove_area).with(target_account, area)
       end
     end
+
+    context "remove_areaがfalseを返した場合" do
+      before do
+        allow(repository).to receive(:find_account).with(target_account.id).and_return(target_account)
+        allow(repository).to receive(:find_area).with(area.id).and_return(area)
+        allow(repository).to receive(:area_exists?).with(target_account, area).and_return(true)
+        allow(repository).to receive(:remove_area).with(target_account, area).and_return(false)
+      end
+
+      it "unprocessable_entityを返すこと" do
+        result = service.call(valid_params, admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq(:unprocessable_entity)
+        expect(result.errors).to include("エリアの削除に失敗しました")
+      end
+    end
+
+    context "データベースエラーが発生した場合" do
+      before do
+        allow(repository).to receive(:find_account).with(target_account.id).and_return(target_account)
+        allow(repository).to receive(:find_area).with(area.id).and_return(area)
+        allow(repository).to receive(:area_exists?).with(target_account, area).and_return(true)
+        allow(repository).to receive(:remove_area).and_raise(ActiveRecord::StatementInvalid.new("connection lost"))
+      end
+
+      it "internal_server_errorを返すこと" do
+        result = service.call(valid_params, admin)
+        expect(result.success?).to be false
+        expect(result.status).to eq(:internal_server_error)
+        expect(result.errors).to include("データベースエラーが発生しました")
+      end
+    end
   end
 
   describe "依存性注入" do

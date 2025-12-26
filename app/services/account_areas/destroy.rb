@@ -55,7 +55,10 @@ module Services
         end
 
         # エリア削除
-        @repository.remove_area(account, area)
+        unless @repository.remove_area(account, area)
+          Rails.logger.error "Failed to remove area: account_id=#{account_id}, area_id=#{area_id}"
+          return failure(["エリアの削除に失敗しました"], :unprocessable_entity)
+        end
 
         Rails.logger.info "Area removed from account: account_id=#{account_id}, area_id=#{area_id}, by_admin=#{current_account.id}"
         areas = @repository.get_areas(account)
