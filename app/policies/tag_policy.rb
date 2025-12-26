@@ -14,11 +14,7 @@ module Policies
     # タグの作成・更新・削除は admin のみ許可
     # @return [Boolean]
     def admin_only?
-      if @account.nil?
-        Rails.logger.warn "TagPolicy: account is nil during admin_only? check"
-        return false
-      end
-      @account.role == "admin"
+      @account&.role == "admin"
     end
   end
 end

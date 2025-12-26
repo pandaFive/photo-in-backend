@@ -28,11 +28,6 @@ RSpec.describe Policies::TagPolicy, type: :policy do
       it "false を返すこと" do
         expect(policy.admin_only?).to be false
       end
-
-      it "警告ログを出力すること" do
-        expect(Rails.logger).to receive(:warn).with(/account is nil/)
-        policy.admin_only?
-      end
     end
 
     context "role が nil の場合" do

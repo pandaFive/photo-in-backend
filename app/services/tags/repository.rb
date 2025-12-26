@@ -40,11 +40,15 @@ module Services
         result
       end
 
+      # タグを削除
+      # @param tag [Tag] 削除対象のタグ
+      # @return [Boolean] 削除成功/失敗
       def destroy(tag)
         Rails.logger.debug "Repository: destroy id=#{tag.id}"
-        result = tag.destroy
-        Rails.logger.debug "Repository: destroy result=#{result.frozen? ? 'success' : 'failed'}"
-        result
+        tag.destroy
+        destroyed = tag.destroyed?
+        Rails.logger.debug "Repository: destroy result=#{destroyed ? 'success' : 'failed'}"
+        destroyed
       end
     end
   end

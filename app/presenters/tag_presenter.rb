@@ -6,12 +6,10 @@ module Presenters
     class << self
       # 単一タグをレスポンス形式に変換
       # @param tag [Tag] タグオブジェクト
-      # @return [Hash, nil]
+      # @return [Hash]
+      # @raise [ArgumentError] tag が nil の場合
       def render_tag(tag)
-        if tag.nil?
-          Rails.logger.warn "TagPresenter.render_tag received nil tag"
-          return nil
-        end
+        raise ArgumentError, "TagPresenter.render_tag received nil tag" if tag.nil?
 
         { id: tag.id, name: tag.name }
       end
@@ -19,11 +17,9 @@ module Presenters
       # タグ一覧をレスポンス形式に変換
       # @param tags [Array<Tag>] タグ配列
       # @return [Array<Hash>]
+      # @raise [ArgumentError] tags が nil の場合
       def render_tags(tags)
-        if tags.nil?
-          Rails.logger.warn "TagPresenter.render_tags received nil tags"
-          return []
-        end
+        raise ArgumentError, "TagPresenter.render_tags received nil tags" if tags.nil?
 
         tags.map { |tag| render_tag(tag) }
       end

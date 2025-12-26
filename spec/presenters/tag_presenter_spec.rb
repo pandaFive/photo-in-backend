@@ -15,15 +15,10 @@ RSpec.describe Presenters::TagPresenter, type: :model do
     end
 
     context "nilの場合" do
-      it "nilを返すこと" do
-        result = described_class.render_tag(nil)
-
-        expect(result).to be_nil
-      end
-
-      it "警告ログを出力すること" do
-        expect(Rails.logger).to receive(:warn).with(/received nil tag/)
-        described_class.render_tag(nil)
+      it "ArgumentErrorを発生させること" do
+        expect { described_class.render_tag(nil) }.to raise_error(
+          ArgumentError, "TagPresenter.render_tag received nil tag"
+        )
       end
     end
   end
@@ -52,15 +47,10 @@ RSpec.describe Presenters::TagPresenter, type: :model do
     end
 
     context "nilの場合" do
-      it "空配列を返すこと" do
-        result = described_class.render_tags(nil)
-
-        expect(result).to eq([])
-      end
-
-      it "警告ログを出力すること" do
-        expect(Rails.logger).to receive(:warn).with(/received nil tags/)
-        described_class.render_tags(nil)
+      it "ArgumentErrorを発生させること" do
+        expect { described_class.render_tags(nil) }.to raise_error(
+          ArgumentError, "TagPresenter.render_tags received nil tags"
+        )
       end
     end
   end
