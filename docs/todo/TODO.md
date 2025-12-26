@@ -30,9 +30,9 @@ Controller → Contract → Service → Repository → Model
 | Tags | 5/5 | 0 | ✅ 完了 |
 | Assigns | 1/1 | 0 | ✅ 完了 |
 | AccountAreas | 2/2 | 0 | ✅ 完了 |
-| TagAccounts | 0/2 | 2 | ⬜ 未着手 |
+| TagAccounts | 2/2 | 0 | ✅ 完了 |
 
-**合計: 38/40 (95%)**
+**合計: 40/40 (100%)**
 
 ---
 
@@ -322,9 +322,31 @@ Controller → Contract → Service → Repository → Model
 - `RecordNotDestroyed` → ログ出力 + false返却
 - `StatementInvalid` → 500 Internal Server Error
 
-### TagAccounts
-- [ ] `POST /api/tag_accounts` (create)
-- [ ] `DELETE /api/tag_accounts/:id` (destroy)
+### TagAccounts ✅ - PR #80
+- [x] `POST /api/tag_accounts` (create)
+  - Contract: `Contracts::TagAccounts::Create`
+  - Service: `Services::TagAccounts::Create`
+  - Repository: `find_account`, `find_tag`, `tag_exists?`, `add_tag`, `get_tags`
+  - Presenter: `TagPresenter.render_tags`（既存）
+  - Policy: `AccountPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+  - 重複追加時 → 409 Conflict
+- [x] `DELETE /api/tag_accounts/:id` (destroy)
+  - Contract: `Contracts::TagAccounts::Destroy`
+  - Service: `Services::TagAccounts::Destroy`
+  - Repository: `find_account`, `find_tag`, `tag_exists?`, `remove_tag`, `get_tags`
+  - Presenter: `TagPresenter.render_tags`（既存）
+  - Policy: `AccountPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+
+作成ファイル:
+- `app/contracts/tag_accounts/create.rb`, `destroy.rb`
+- `app/services/tag_accounts/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
+
+エラーハンドリング:
+- `RecordNotUnique` → ログ出力 + false返却（レースコンディション対応）
+- `RecordNotDestroyed` → ログ出力 + false返却
+- `StatementInvalid` → 500 Internal Server Error
 
 ---
 
@@ -393,6 +415,8 @@ Controller → Contract → Service → Repository → Model
 | `POST /api/tasks/assign/cycle` | 認証必須化、認可追加(admin_only)、悲観ロック、既存サイクル非活性化、自動割り当て実行、レスポンス: 200→201 | #78 |
 | `POST /api/account_areas` | 認証必須化、認可追加(admin_only)、重複追加→409 | #79 |
 | `DELETE /api/account_areas/:id` | 認証必須化、認可追加(admin_only) | #79 |
+| `POST /api/tag_accounts` | 認証必須化、認可追加(admin_only)、重複追加→409 | #80 |
+| `DELETE /api/tag_accounts/:id` | 認証必須化、認可追加(admin_only) | #80 |
 
 ---
 
@@ -448,6 +472,11 @@ Controller → Contract → Service → Repository → Model
 - `app/contracts/account_areas/create.rb`, `destroy.rb`
 - `app/services/account_areas/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
 - 特徴: admin_only認可、重複追加→409 Conflict、RecordNotUnique/RecordNotDestroyedハンドリング
+
+### TagAccounts Create/Destroy
+- `app/contracts/tag_accounts/create.rb`, `destroy.rb`
+- `app/services/tag_accounts/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
+- 特徴: admin_only認可、重複追加→409 Conflict、RecordNotUnique/RecordNotDestroyedハンドリング、TagPresenter活用
 
 ---
 
