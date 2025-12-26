@@ -1,37 +1,47 @@
 # frozen_string_literal: true
 
 class Api::TagsController < ApplicationController
-  def index
-    tags = Tag.all
+  before_action :authenticated?
 
-    render json: tags
+  def index
+    result = ::Services::Tags::Index.new.call(@current_account)
+    render_result(result) { ::Presenters::TagPresenter.render_tags(result.tags) }
+  end
+
+  def show
+    result = ::Services::Tags::Show.new.call(show_params, @current_account)
+    render_result(result) { ::Presenters::TagPresenter.render_tag(result.tag) }
   end
 
   def create
-    tag = Tag.new(create_params)
-
-    if tag.save
-      render json: tag
-    else
-      render json: { message: tag.errors, status: 422 }, status: :unprocessable_entity
-    end
+    result = ::Services::Tags::Create.new.call(create_params, @current_account)
+    render_result(result) { ::Presenters::TagPresenter.render_tag(result.tag) }
   end
 
   def update
-    tag = Tag.find(params[:id])
-    tag.update(create_params)
-
-    render json: tag
+    result = ::Services::Tags::Update.new.call(update_params, @current_account)
+    render_result(result) { ::Presenters::TagPresenter.render_tag(result.tag) }
   end
 
   def destroy
-    tag = Tag.find(params[:id])
-
-    tag.destroy
+    result = ::Services::Tags::Destroy.new.call(destroy_params, @current_account)
+    render_result(result) { { message: result.message } }
   end
 
   private
+    def show_params
+      { id: params[:id] }
+    end
+
     def create_params
-      params.require(:tag).permit(:name)
+      { tag: params.require(:tag).permit(:name) }
+    end
+
+    def update_params
+      { id: params[:id], tag: params.require(:tag).permit(:name) }
+    end
+
+    def destroy_params
+      { id: params[:id] }
     end
 end

@@ -15,9 +15,9 @@ RSpec.describe "Api::Comments", type: :request do
 
   describe "GET /api/comments" do
     before do
-      @admin_comment = create(:comment, account: admin, task: task, content: "管理者コメント")
-      @member_comment = create(:comment, account: member, task: task, content: "メンバーコメント")
-      @other_comment = create(:comment, account: other_member, task: task, content: "他メンバーコメント")
+      @admin_comment = create(:comment, account: admin, task:, content: "管理者コメント")
+      @member_comment = create(:comment, account: member, task:, content: "メンバーコメント")
+      @other_comment = create(:comment, account: other_member, task:, content: "他メンバーコメント")
     end
 
     context "認証なしの場合" do
@@ -83,7 +83,7 @@ RSpec.describe "Api::Comments", type: :request do
   end
 
   describe "GET /api/comments/:id" do
-    let(:member_comment) { create(:comment, account: member, task: task, content: "テストコメント") }
+    let(:member_comment) { create(:comment, account: member, task:, content: "テストコメント") }
 
     context "認証なしの場合" do
       it "Status 401が返ってくること" do
@@ -187,7 +187,7 @@ RSpec.describe "Api::Comments", type: :request do
   end
 
   describe "PUT /api/comments/:id" do
-    let(:member_comment) { create(:comment, account: member, task: task, content: "元のコメント") }
+    let(:member_comment) { create(:comment, account: member, task:, content: "元のコメント") }
 
     context "認証なしの場合" do
       it "Status 401が返ってくること" do
@@ -246,7 +246,7 @@ RSpec.describe "Api::Comments", type: :request do
 
   describe "DELETE /api/comments/:id" do
     context "認証なしの場合" do
-      let!(:comment) { create(:comment, account: member, task: task) }
+      let!(:comment) { create(:comment, account: member, task:) }
 
       it "Status 401が返ってくること" do
         delete "/api/comments/#{comment.id}"
@@ -255,7 +255,7 @@ RSpec.describe "Api::Comments", type: :request do
     end
 
     context "所有者が削除する場合" do
-      let!(:member_comment) { create(:comment, account: member, task: task) }
+      let!(:member_comment) { create(:comment, account: member, task:) }
 
       it "Status 200が返ってくること" do
         delete "/api/comments/#{member_comment.id}", headers: member_headers
@@ -276,7 +276,7 @@ RSpec.describe "Api::Comments", type: :request do
     end
 
     context "adminが削除する場合" do
-      let!(:member_comment) { create(:comment, account: member, task: task) }
+      let!(:member_comment) { create(:comment, account: member, task:) }
 
       it "Status 200が返ってくること" do
         delete "/api/comments/#{member_comment.id}", headers: admin_headers
@@ -285,7 +285,7 @@ RSpec.describe "Api::Comments", type: :request do
     end
 
     context "他のmemberが削除する場合" do
-      let!(:member_comment) { create(:comment, account: member, task: task) }
+      let!(:member_comment) { create(:comment, account: member, task:) }
 
       it "Status 403が返ってくること" do
         delete "/api/comments/#{member_comment.id}", headers: other_member_headers

@@ -6,11 +6,11 @@ RSpec.describe Presenters::CommentPresenter, type: :model do
   let(:admin) { create(:account, role: "admin") }
   let(:member) { create(:account_member) }
   let(:area) { create(:area) }
-  let(:task) { create(:task, area: area) }
+  let(:task) { create(:task, area:) }
 
   describe ".render_comment" do
     context "有効なコメントの場合" do
-      let(:comment) { create(:comment, account: member, task: task, content: "テストコメント") }
+      let(:comment) { create(:comment, account: member, task:, content: "テストコメント") }
 
       it "正しい形式を返すこと" do
         result = described_class.render_comment(comment)
@@ -39,8 +39,8 @@ RSpec.describe Presenters::CommentPresenter, type: :model do
 
   describe ".render_comments" do
     context "有効なコメント配列の場合" do
-      let(:comment1) { create(:comment, account: admin, task: task, content: "Admin comment") }
-      let(:comment2) { create(:comment, account: member, task: task, content: "Member comment") }
+      let(:comment1) { create(:comment, account: admin, task:, content: "Admin comment") }
+      let(:comment2) { create(:comment, account: member, task:, content: "Member comment") }
 
       it "全てのコメントを変換すること" do
         result = described_class.render_comments([comment1, comment2])
