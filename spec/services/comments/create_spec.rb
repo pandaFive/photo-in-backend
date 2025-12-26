@@ -133,6 +133,26 @@ RSpec.describe Services::Comments::Create, type: :model do
       end
     end
 
+    context "RecordNotUniqueが発生した場合" do
+      let(:mock_repository) { instance_double(Services::Comments::Repository) }
+      let(:mock_comment) { instance_double(Comment, id: 1) }
+
+      before do
+        allow(mock_repository).to receive(:task_exists?).and_return(true)
+        allow(mock_repository).to receive(:build).and_return(mock_comment)
+        allow(mock_repository).to receive(:save).and_raise(ActiveRecord::RecordNotUnique)
+      end
+
+      it "conflictを返すこと" do
+        result = described_class.new(repository: mock_repository).call(
+          { comment: { content: "テスト", task_id: task.id } }, member
+        )
+        expect(result.success?).to be false
+        expect(result.status).to eq :conflict
+        expect(result.errors).to include("このコメントは既に存在します")
+      end
+    end
+
     context "StatementInvalidが発生した場合" do
       let(:mock_repository) { instance_double(Services::Comments::Repository) }
       let(:mock_comment) { instance_double(Comment, id: 1) }

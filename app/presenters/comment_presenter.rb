@@ -8,9 +8,17 @@ module Presenters
     class << self
       # 単一コメントをレスポンス形式に変換
       # @param comment [Comment] コメントオブジェクト（account関連を含む）
-      # @return [Hash]
+      # @return [Hash, nil]
       def render_comment(comment)
-        return nil if comment.nil?
+        if comment.nil?
+          Rails.logger.warn "CommentPresenter.render_comment received nil comment"
+          return nil
+        end
+
+        # orphanedコメント（削除されたアカウント）の警告
+        if comment.account.nil?
+          Rails.logger.warn "CommentPresenter: comment id=#{comment.id} has nil account (orphaned)"
+        end
 
         {
           id: comment.id,
@@ -27,7 +35,10 @@ module Presenters
       # @param comments [Array<Comment>] コメント配列
       # @return [Array<Hash>]
       def render_comments(comments)
-        return [] if comments.nil?
+        if comments.nil?
+          Rails.logger.warn "CommentPresenter.render_comments received nil comments"
+          return []
+        end
 
         comments.map { |comment| render_comment(comment) }
       end

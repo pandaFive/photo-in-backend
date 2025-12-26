@@ -28,13 +28,21 @@ module Policies
     private
       # @return [Boolean] 現在のユーザーがadminか
       def admin?
-        @account&.role == "admin"
+        if @account.nil?
+          Rails.logger.warn "CommentPolicy: account is nil during admin? check"
+          return false
+        end
+        @account.role == "admin"
       end
 
       # @param comment [Comment] 対象コメント
       # @return [Boolean] 現在のユーザーがコメント所有者か
       def owner?(comment)
-        @account&.id == comment.account_id
+        if @account.nil?
+          Rails.logger.warn "CommentPolicy: account is nil during owner? check"
+          return false
+        end
+        @account.id == comment.account_id
       end
 
       # @param comment [Comment] 対象コメント
