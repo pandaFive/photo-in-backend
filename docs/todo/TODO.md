@@ -29,10 +29,10 @@ Controller → Contract → Service → Repository → Model
 | Comments | 5/5 | 0 | ✅ 完了 |
 | Tags | 5/5 | 0 | ✅ 完了 |
 | Assigns | 1/1 | 0 | ✅ 完了 |
-| AccountAreas | 0/2 | 2 | ⬜ 未着手 |
+| AccountAreas | 2/2 | 0 | ✅ 完了 |
 | TagAccounts | 0/2 | 2 | ⬜ 未着手 |
 
-**合計: 36/40 (90%)**
+**合計: 38/40 (95%)**
 
 ---
 
@@ -296,9 +296,31 @@ Controller → Contract → Service → Repository → Model
 - `StatementInvalid` → 500 Internal Server Error
 - nil cycle → ArgumentError（Controller/Presenterで検出）
 
-### AccountAreas
-- [ ] `POST /api/account_areas` (create)
-- [ ] `DELETE /api/account_areas/:id` (destroy)
+### AccountAreas ✅ - PR #79
+- [x] `POST /api/account_areas` (create)
+  - Contract: `Contracts::AccountAreas::Create`
+  - Service: `Services::AccountAreas::Create`
+  - Repository: `find_account`, `find_area`, `area_exists?`, `add_area`, `get_areas`
+  - Presenter: `AreaPresenter.render_areas`（既存）
+  - Policy: `AccountPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+  - 重複追加時 → 409 Conflict
+- [x] `DELETE /api/account_areas/:id` (destroy)
+  - Contract: `Contracts::AccountAreas::Destroy`
+  - Service: `Services::AccountAreas::Destroy`
+  - Repository: `find_account`, `find_area`, `area_exists?`, `remove_area`, `get_areas`
+  - Presenter: `AreaPresenter.render_areas`（既存）
+  - Policy: `AccountPolicy#admin_only?`
+  - 認証必須化、認可追加（admin_only）
+
+作成ファイル:
+- `app/contracts/account_areas/create.rb`, `destroy.rb`
+- `app/services/account_areas/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
+
+エラーハンドリング:
+- `RecordNotUnique` → ログ出力 + false返却（レースコンディション対応）
+- `RecordNotDestroyed` → ログ出力 + false返却
+- `StatementInvalid` → 500 Internal Server Error
 
 ### TagAccounts
 - [ ] `POST /api/tag_accounts` (create)
@@ -369,6 +391,8 @@ Controller → Contract → Service → Repository → Model
 | `PUT /api/tags/:id` | 認証必須化、認可追加(admin_only)、悲観ロック | #77 |
 | `DELETE /api/tags/:id` | 認証必須化、認可追加(admin_only)、悲観ロック、FK制約→409、レスポンス: message追加 | #77 |
 | `POST /api/tasks/assign/cycle` | 認証必須化、認可追加(admin_only)、悲観ロック、既存サイクル非活性化、自動割り当て実行、レスポンス: 200→201 | #78 |
+| `POST /api/account_areas` | 認証必須化、認可追加(admin_only)、重複追加→409 | #79 |
+| `DELETE /api/account_areas/:id` | 認証必須化、認可追加(admin_only) | #79 |
 
 ---
 
@@ -419,6 +443,11 @@ Controller → Contract → Service → Repository → Model
 - `app/services/assigns/cycle_create.rb`, `repository.rb`, `result.rb`
 - `app/presenters/assign_cycle_presenter.rb`
 - 特徴: admin_only認可、悲観ロック、既存サイクル非活性化、自動割り当て、nil cycleガード
+
+### AccountAreas Create/Destroy
+- `app/contracts/account_areas/create.rb`, `destroy.rb`
+- `app/services/account_areas/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
+- 特徴: admin_only認可、重複追加→409 Conflict、RecordNotUnique/RecordNotDestroyedハンドリング
 
 ---
 
