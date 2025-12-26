@@ -1,21 +1,23 @@
 # frozen_string_literal: true
 
 class Api::AssignsController < ApplicationController
-  # TODO: indexメソッドの実装が必要な場合は追加してください
-  # 現在はcycle_createのみが使用されています
+  before_action :authenticated?
 
+  # POST /api/tasks/assign/cycle
+  # サイクルを作成し、自動割り当てを実行
   def cycle_create
-    cycle = AssignCycle.new(cycle_params)
-
-    if cycle.save
-      render json: cycle
-    else
-      render json: { message: cycle.errors, status: 422 }, status: :unprocessable_entity
+    result = ::Services::Assigns::CycleCreate.new.call(cycle_create_params, @current_account)
+    render_result(result) do
+      if result.cycle.nil?
+        Rails.logger.error "CycleCreate returned success but cycle is nil"
+        raise ArgumentError, "Unexpected nil cycle on success"
+      end
+      ::Presenters::AssignCyclePresenter.render_cycle(result.cycle)
     end
   end
 
   private
-    def cycle_params
-      params.require(:assign_cycle).permit(:task_id)
+    def cycle_create_params
+      { assign_cycle: params.require(:assign_cycle).permit(:task_id) }
     end
 end
