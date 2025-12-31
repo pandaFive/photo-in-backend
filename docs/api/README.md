@@ -305,21 +305,23 @@ Authorization: Bearer <TOKEN>
 
 ```json
 {
-  "name": "新規ユーザー",
-  "password": "password123",
-  "role": "member",
-  "capacity": 10,
-  "area": [1, 2]
+  "account": {
+    "name": "新規ユーザー",
+    "password": "password123",
+    "role": "member",
+    "capacity": 10,
+    "area": [1, 2]
+  }
 }
 ```
 
 | パラメータ | 型 | 必須 | 説明 | 制約 |
 |------------|-----|------|------|------|
-| name | string | Yes | アカウント名 | 最大32文字 |
-| password | string | Yes | パスワード | 最小8文字 |
-| role | string | Yes | ロール | `admin` または `member` |
-| capacity | integer | No | 処理可能件数 | 0以上 |
-| area | array | No | 担当エリアIDリスト | - |
+| account.name | string | Yes | アカウント名 | 最大32文字 |
+| account.password | string | Yes | パスワード | 最小8文字 |
+| account.role | string | Yes | ロール | `admin` または `member` |
+| account.capacity | integer | No | 処理可能件数 | 0以上 |
+| account.area | array | No | 担当エリアIDリスト | - |
 
 #### レスポンス（201 Created）
 
@@ -346,17 +348,19 @@ Authorization: Bearer <TOKEN>
 
 ```json
 {
-  "name": "更新後の名前",
-  "capacity": 15
+  "account": {
+    "name": "更新後の名前",
+    "capacity": 15
+  }
 }
 ```
 
 | パラメータ | 型 | 必須 | 説明 |
 |------------|-----|------|------|
-| name | string | No | アカウント名 |
-| password | string | No | パスワード |
-| role | string | No | ロール |
-| capacity | integer | No | 処理可能件数 |
+| account.name | string | No | アカウント名 |
+| account.password | string | No | パスワード |
+| account.role | string | No | ロール |
+| account.capacity | integer | No | 処理可能件数 |
 
 #### レスポンス（200 OK）
 
@@ -622,7 +626,7 @@ Authorization: Bearer <TOKEN>
 
 | パラメータ | 型 | 説明 |
 |------------|-----|------|
-| status | string | `active`（担当中）または `ng`（NG履歴） |
+| type | string | `all`（担当中のアクティブタスク）または `ng`（NG履歴） |
 
 #### レスポンス（200 OK）
 
@@ -719,17 +723,13 @@ Authorization: Bearer <TOKEN>
 
 **認可**: 担当者本人または管理者
 
-#### リクエスト
+#### パスパラメータ
 
-```json
-{
-  "history_id": 10
-}
-```
+| パラメータ | 型 | 説明 |
+|------------|-----|------|
+| id | integer | 割り当て履歴ID（AssignHistory ID）|
 
-| パラメータ | 型 | 必須 | 説明 |
-|------------|-----|------|------|
-| history_id | integer | Yes | 割り当て履歴ID |
+**注意**: URLパスの `:id` は歴史的経緯によりTaskIDではなくAssignHistory IDを指定します。
 
 #### レスポンス（200 OK）
 
@@ -748,17 +748,13 @@ Authorization: Bearer <TOKEN>
 
 **認可**: 担当者本人または管理者
 
-#### リクエスト
+#### パスパラメータ
 
-```json
-{
-  "history_id": 10
-}
-```
+| パラメータ | 型 | 説明 |
+|------------|-----|------|
+| id | integer | 割り当て履歴ID（AssignHistory ID）|
 
-| パラメータ | 型 | 必須 | 説明 |
-|------------|-----|------|------|
-| history_id | integer | Yes | 割り当て履歴ID |
+**注意**: URLパスの `:id` は歴史的経緯によりTaskIDではなくAssignHistory IDを指定します。
 
 #### レスポンス（200 OK）
 
@@ -879,9 +875,9 @@ Authorization: Bearer <TOKEN>
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|-----|------|
-| taskId | integer | タスクIDでフィルタ |
+| パラメータ | 型 | 必須 | 説明 |
+|------------|-----|------|------|
+| taskId | integer | Yes | タスクIDでフィルタ |
 
 #### レスポンス（200 OK）
 
@@ -894,7 +890,7 @@ Authorization: Bearer <TOKEN>
     "account_id": 1,
     "account_name": "山田太郎",
     "account_role": "member",
-    "updated_at": "2025-12-31T12:00:00Z"
+    "updated_at": "2025-12-31T12:00:00.000+09:00"
   }
 ]
 ```
@@ -923,15 +919,17 @@ Authorization: Bearer <TOKEN>
 
 ```json
 {
-  "content": "コメント内容",
-  "task_id": 1
+  "comment": {
+    "content": "コメント内容",
+    "task_id": 1
+  }
 }
 ```
 
 | パラメータ | 型 | 必須 | 説明 |
 |------------|-----|------|------|
-| content | string | Yes | コメント内容 |
-| task_id | integer | Yes | 対象タスクID |
+| comment.content | string | Yes | コメント内容 |
+| comment.task_id | integer | Yes | 対象タスクID |
 
 #### レスポンス（201 Created）
 
@@ -948,7 +946,11 @@ Authorization: Bearer <TOKEN>
 #### リクエスト
 
 ```json
-{ "content": "更新後のコメント" }
+{
+  "comment": {
+    "content": "更新後のコメント"
+  }
+}
 ```
 
 #### レスポンス（200 OK）
