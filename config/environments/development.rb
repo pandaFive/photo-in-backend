@@ -74,4 +74,13 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Bullet: N+1クエリ検出設定
+  config.after_initialize do
+    Bullet.enable = true
+    Bullet.rails_logger = true      # Railsログに出力
+    Bullet.add_footer = false       # APIモードのためフッター無効
+    Bullet.bullet_logger = true     # log/bullet.logに出力
+    Bullet.raise = false            # 例外は発生させない（ログのみ）
+  end
 end

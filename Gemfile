@@ -45,10 +45,11 @@ gem "rack-attack"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri windows ]
-end
+  gem "debug", platforms: %i[mri windows]
 
-group :development, :test do
+  # N+1クエリ検出
+  gem "bullet"
+
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
   gem "solargraph"
@@ -63,7 +64,6 @@ group :development, :test do
 end
 
 group :test do
-  gem "rspec-rails"
   gem "guard"
   gem "simplecov",               require: false
   gem "rails-controller-testing"
