@@ -13,8 +13,8 @@
 | Critical | 0 | 0 | 0 |
 | High | 1 | 1 | 0 |
 | Medium | 3 | 3 | 0 |
-| Low | 4 | 1 | 3 |
-| **合計** | **8** | **5** | **3** |
+| Low | 4 | 3 | 1 |
+| **合計** | **8** | **7** | **1** |
 
 ---
 
@@ -105,17 +105,21 @@
 
 ### リファクタリング
 
-- [ ] **REF-L01**: AssignCycle#deactivation の冗長な self 削除
-  - ファイル: `app/models/assign_cycle.rb:36`
-  - 問題: `self.update` の `self` が冗長
-  - 対応: `update(is_active: false)` に変更
-  - 工数: 0.5h
+- [x] **REF-L01**: AssignCycle#deactivation の冗長な self 削除 ✅ PR #85
+  - ファイル: `app/models/assign_cycle.rb`
+  - 対応内容:
+    - `self.update` → `update`
+    - `self.deactivation` → `deactivation`
+    - `self.id` → `id`（Ruby 3.1 hash shorthand使用）
+  - 完了日: 2025-12-31
 
-- [ ] **REF-L02**: AssignCycle.unfulfilleds のスコープ化
-  - ファイル: `app/models/assign_cycle.rb:41-44`
-  - 問題: クラスメソッドがシンプルなクエリのみで冗長
-  - 対応: `scope :unfulfilleds, -> { where(is_active: true) }` に変更
-  - 工数: 0.5h
+- [x] **REF-L02**: AssignCycle.unfulfilleds のスコープ化 ✅ PR #85
+  - ファイル: `app/models/assign_cycle.rb`
+  - 対応内容:
+    - `class << self ... end` ブロック削除
+    - `scope :unfulfilleds, -> { where(is_active: true) }` に変更
+    - 日本語コメント追加
+  - 完了日: 2025-12-31
 
 ---
 
@@ -126,8 +130,9 @@
 - **RuboCop: 287ファイル、違反なし**（LINT-M01でdb/schema.rb除外設定追加）
 - **API仕様書作成完了**: DOC-M01（`docs/api/README.md`）
 - **N+1クエリ監視導入**: PERF-L01（bullet gem）
+- **リファクタリング完了**: REF-L01, REF-L02（AssignCycleモデル整理）
 - RSpec: 1723テスト全Pass
-- Low優先度タスク残り3件は次スプリント以降で対応
+- Low優先度タスク残り1件（LOG-L01）は次スプリント以降で対応
 
 ---
 
@@ -141,7 +146,7 @@
 | DOC-M01 | 総合レビュー 2025-12-31 | Medium | ✅ 完了 |
 | PERF-L01 | 総合レビュー 2025-12-31 | Low | ✅ 完了 |
 | LOG-L01 | 総合レビュー 2025-12-31 | Low | 未着手 |
-| REF-L01, REF-L02 | 総合レビュー 2025-12-31（コードレビュー） | Low | 未着手 |
+| REF-L01, REF-L02 | 総合レビュー 2025-12-31（コードレビュー） | Low | ✅ 完了 |
 
 ---
 
@@ -154,6 +159,8 @@
 | 2025-12-31 | LINT-M01 | db/schema.rb RuboCop除外設定 | #82 |
 | 2025-12-31 | DOC-M01 | API仕様書の作成 | #83 |
 | 2025-12-31 | PERF-L01 | N+1クエリ監視ツール導入（bullet） | #84 |
+| 2025-12-31 | REF-L01 | AssignCycle#deactivationの冗長なself削除 | #85 |
+| 2025-12-31 | REF-L02 | AssignCycle.unfulfilledsのスコープ化 | #85 |
 
 ---
 
