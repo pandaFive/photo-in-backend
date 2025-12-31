@@ -1,486 +1,169 @@
-# 4層アーキテクチャ移行 TODO
+# バックエンド改善TODO
 
-## アーキテクチャ概要
-
-```
-Controller → Contract → Service → Repository → Model
-                              ↘ Policy
-                              ↘ Domain
-```
-
-各層の役割:
-- **Contract** (`app/contracts/`): 入力検証 + データ変換
-- **Service** (`app/services/`): ユースケース（トランザクション/副作用の統括）
-- **Repository** (`app/services/*/repository.rb`): DBアクセス（Modelへの委譲）
-- **Domain** (`app/domain/`): 純粋な業務ロジック（副作用なし）
-- **Policy** (`app/policies/`): 認可ルール
-- **Presenter** (`app/presenters/`): レスポンス整形
+**作成日**: 2025年12月31日
+**前回完了**: `/docs/done/DONE-2025-12-31.md`
+**最終レビュー**: 2025年12月31日（総合レビュー実施）
 
 ---
 
-## 移行状況サマリー
+## 進捗サマリー
 
-| コントローラー | 移行済み | 未移行 | 進捗 |
-|--------------|---------|-------|------|
-| Accounts | 6/6 | 0 | ✅ 完了 |
-| Authentications | 1/1 | 0 | ✅ 完了 |
-| Tasks | 13/13 | 0 | ✅ 完了 |
-| Areas | 5/5 | 0 | ✅ 完了 |
-| Comments | 5/5 | 0 | ✅ 完了 |
-| Tags | 5/5 | 0 | ✅ 完了 |
-| Assigns | 1/1 | 0 | ✅ 完了 |
-| AccountAreas | 2/2 | 0 | ✅ 完了 |
-| TagAccounts | 2/2 | 0 | ✅ 完了 |
-
-**合計: 40/40 (100%)**
+| 優先度 | 総数 | 完了 | 残り |
+|--------|------|------|------|
+| Critical | 0 | 0 | 0 |
+| High | 1 | 1 | 0 |
+| Medium | 3 | 2 | 1 |
+| Low | 4 | 0 | 4 |
+| **合計** | **8** | **3** | **5** |
 
 ---
 
-## Phase 1: Tasks コントローラー完了 (優先度: 高)
+## Critical（即時対応必須）
 
-### 移行済み ✅
-- [x] `GET /api/tasks` (index) - PR #62
-- [x] `POST /api/tasks` (create) - PR #61
-- [x] `GET /api/tasks/:id` (show)
-  - Contract: `Contracts::Tasks::Show`
-  - Service: `Services::Tasks::Show`
-  - Repository: `find_by_id`追加
-  - Presenter: `TaskPresenter.render_task`（既存）
-  - 認証必須化
-- [x] `PUT /api/tasks/:id` (update)
-  - Contract: `Contracts::Tasks::Update`
-  - Service: `Services::Tasks::Update`
-  - Repository: `update(task, attrs)`追加
-  - Presenter: `TaskPresenter.render_task`（既存）
-  - Model: `Task#current_assignee?`追加
-  - 認証必須化、認可追加（admin + 担当者）
-- [x] `DELETE /api/tasks/:id` (destroy)
-  - Contract: `Contracts::Tasks::Destroy`
-  - Service: `Services::Tasks::Destroy`
-  - Repository: `delete(task)`追加
-  - 認証必須化、認可追加（admin_only）
-
-- [x] `POST /api/tasks/:id/tag` (add_tag)
-  - Contract: `Contracts::Tasks::AddTag`
-  - Service: `Services::Tasks::AddTag`
-  - Repository: `find_tag`, `add_tag`追加
-  - Presenter: `TaskPresenter.render_tags`（新規）
-  - 認証必須化、認可追加（admin_only）
-- [x] `DELETE /api/tasks/:id/tag` (remove_tag)
-  - Contract: `Contracts::Tasks::RemoveTag`
-  - Service: `Services::Tasks::RemoveTag`
-  - Repository: `remove_tag`追加
-  - 認証必須化、認可追加（admin_only）
-- [x] `PUT /api/tasks/:id/completed` (completed)
-  - Contract: `Contracts::Tasks::Completed`
-  - Service: `Services::Tasks::Completed`
-  - Repository: `find_assign_history_with_lock`, `complete_assign_history`, `deactivate_cycle`追加
-  - 認証必須化、認可追加（admin + 担当者）
-- [x] `PUT /api/tasks/:id/ng` (ng)
-  - Contract: `Contracts::Tasks::Ng`
-  - Service: `Services::Tasks::Ng`
-  - Repository: `mark_ng`追加
-  - 認証必須化、認可追加（admin + 担当者）
-  - Note: NGマーク後にAssignCycle.assign で再割り当て実行
-- [x] `POST /api/tasks/:id/newCycle` (create_new_cycle)
-  - Contract: `Contracts::Tasks::CreateNewCycle`
-  - Service: `Services::Tasks::CreateNewCycle`
-  - Repository: `deactivate_all_cycles`, `create_cycle`追加
-  - Presenter: `TaskPresenter.render_task`（既存）
-  - 認証必須化、認可追加（admin_only）
-
-- [x] `GET /api/unfulfilled-count` (unfulfilleds_count)
-  - Service: `Services::Tasks::UnfulfilledsCount`
-  - Repository: `count_unfulfilleds`追加
-  - Note: Contractなし（パラメータなし）
-  - 認証必須化
-
-- [x] `GET /api/completed-data` (get_complete_data)
-  - Service: `Services::Tasks::GetCompleteData`
-  - Repository: `get_completed_past_week`追加
-  - Note: Contractなし（パラメータなし）
-  - 認証必須化
-  - DBエラーハンドリング追加
-
-- [x] `GET /api/account/tasks` (get_account_task)
-  - Contract: `Contracts::Tasks::GetAccountTask`
-  - Service: `Services::Tasks::GetAccountTask`
-  - Repository: `get_account_assign_tasks`追加
-  - Presenter: `TaskPresenter.render_account_assign_tasks`（新規）
-  - 認証必須化、認可追加（admin + 自分のみ）
-  - Note: `title` → `task_title` に変更（破壊的変更）
-
-### リファクタリング完了 ✅
-- [x] Result Struct 統合 - PR #73
-  - 6つの個別Result Structを`Services::Tasks::Result`に統合
-  - 削除: DestroyResult, CompletedResult, NgResult, CreateNewCycleResult, UnfulfilledsCountResult, GetCompleteDataResult
-  - 統合フィールド: success?, task, tasks, message, count, data, errors, status
+なし
 
 ---
 
-## Phase 2: Areas コントローラー完了 (優先度: 中)
+## High（今スプリント対応）
 
-### 移行済み ✅ - PR #75
-- [x] `GET /api/areas` (index)
-  - Service: `Services::Areas::Index`
-  - Repository: `all_areas`
-  - Presenter: `AreaPresenter.render_areas`
-  - 認証必須化
-- [x] `GET /api/areas/:id` (show)
-  - Contract: `Contracts::Areas::Show`
-  - Service: `Services::Areas::Show`
-  - Repository: `find_by_id`
-  - Presenter: `AreaPresenter.render_area`
-  - 認証必須化
-- [x] `POST /api/areas` (create)
-  - Contract: `Contracts::Areas::Create`
-  - Service: `Services::Areas::Create`
-  - Repository: `build`, `save`
-  - Presenter: `AreaPresenter.render_area`
-  - Policy: `AreaPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-- [x] `PUT /api/areas/:id` (update)
-  - Contract: `Contracts::Areas::Update`
-  - Service: `Services::Areas::Update`
-  - Repository: `find_by_id_with_lock`, `update`
-  - Presenter: `AreaPresenter.render_area`
-  - Policy: `AreaPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-  - トランザクション + 悲観ロック
-- [x] `DELETE /api/areas/:id` (destroy)
-  - Contract: `Contracts::Areas::Destroy`
-  - Service: `Services::Areas::Destroy`
-  - Repository: `find_by_id_with_lock`, `destroy`
-  - Policy: `AreaPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-  - トランザクション + 悲観ロック
-  - FK制約エラー処理（409 Conflict）
+### セキュリティ
 
-作成ファイル:
-- `app/contracts/areas/` - id_contract, show, destroy, create, update
-- `app/services/areas/` - index, show, create, update, destroy, repository, result
-- `app/policies/area_policy.rb`
-- `app/presenters/area_presenter.rb`
+- [x] **SEC-H01**: レート制限の導入 ✅ PR #81
+  - ファイル: `Gemfile`, `config/initializers/rack_attack.rb`（新規）, `spec/initializers/rack_attack_spec.rb`（新規）
+  - 対応内容:
+    - `rack-attack` gem導入
+    - 全リクエスト: 300回/分（IPごと）
+    - ログイン: 5回/分（ブルートフォース対策）
+    - アカウント作成: 10回/時
+    - ブロックIPリスト（環境変数設定可）
+    - ヘルスチェック・開発環境は制限対象外
+  - テスト: 13件追加（全1723件Pass）
+  - 完了日: 2025-12-31
 
 ---
 
-## Phase 3: Comments コントローラー完了 (優先度: 中)
+## Medium（次スプリント対応）
 
-### 移行済み ✅ - PR #76
-- [x] `GET /api/comments` (index)
-  - Contract: `Contracts::Comments::Index`
-  - Service: `Services::Comments::Index`
-  - Repository: `task_exists?`, `get_comments_for_admin`, `get_comments_for_member`
-  - Presenter: `CommentPresenter.render_comments`
-  - 認証必須化
-  - 認可: admin=全コメント / member=自分+adminのコメントのみ
-- [x] `GET /api/comments/:id` (show)
-  - Contract: `Contracts::Comments::Show` (継承: IdContract)
-  - Service: `Services::Comments::Show`
-  - Repository: `find_by_id`
-  - Presenter: `CommentPresenter.render_comment`
-  - Policy: `CommentPolicy#can_view?`
-  - 認証必須化、認可追加
-- [x] `POST /api/comments` (create)
-  - Contract: `Contracts::Comments::Create`
-  - Service: `Services::Comments::Create`
-  - Repository: `task_exists?`, `build`, `save`, `find_by_id`
-  - Presenter: `CommentPresenter.render_comment`
-  - 認証必須化
-  - account_id 自動設定（なりすまし防止）
-  - 例外処理: Deadlocked, LockWaitTimeout, RecordNotUnique, InvalidForeignKey, StatementInvalid
-- [x] `PUT /api/comments/:id` (update)
-  - Contract: `Contracts::Comments::Update`
-  - Service: `Services::Comments::Update`
-  - Repository: `find_by_id_with_lock`, `update`, `find_by_id`
-  - Presenter: `CommentPresenter.render_comment`
-  - Policy: `CommentPolicy#can_modify?`
-  - 認証必須化、認可追加（admin + 所有者）
-  - トランザクション + 悲観ロック
-- [x] `DELETE /api/comments/:id` (destroy)
-  - Contract: `Contracts::Comments::Destroy` (継承: IdContract)
-  - Service: `Services::Comments::Destroy`
-  - Repository: `find_by_id_with_lock`, `destroy`
-  - Policy: `CommentPolicy#can_modify?`
-  - 認証必須化、認可追加（admin + 所有者）
-  - トランザクション + 悲観ロック
+### セキュリティ
 
-作成ファイル:
-- `app/contracts/comments/` - id_contract, index, show, destroy, create, update
-- `app/services/comments/` - index, show, create, update, destroy, repository, result
-- `app/policies/comment_policy.rb`
-- `app/presenters/comment_presenter.rb`
+- [x] **SEC-M01**: 本番環境CORS設定の確認 ✅ 確認完了（コード変更不要）
+  - ファイル: `config/initializers/cors.rb`
+  - 確認結果:
+    - ✅ `ALLOWED_ORIGINS`環境変数で許可オリジン制御
+    - ✅ 本番環境で未設定/localhost時は起動失敗（フェイルセーフ）
+    - ✅ ワイルドカード`*`未使用
+    - ✅ 開発環境デフォルト: `http://localhost:3333`
+  - 本番デプロイ時: `ALLOWED_ORIGINS=https://your-domain.com` を設定
+  - 完了日: 2025-12-31
 
-エラーハンドリング:
-- `Deadlocked`, `LockWaitTimeout` → 503 Service Unavailable
-- `RecordNotUnique`, `InvalidForeignKey` → 409 Conflict
-- `StatementInvalid` → 500 Internal Server Error
-- nil チェック + 警告ログ（Presenter, Policy）
+### コード品質
+
+- [x] **LINT-M01**: db/schema.rb の RuboCop 警告修正 ✅ PR #82
+  - ファイル: `.rubocop.yml`
+  - 問題: `db/schema.rb` に `frozen_string_literal` コメントがない（自動生成ファイル）
+  - 対応: `.rubocop.yml` で `db/schema.rb` を除外設定に追加
+  - 完了日: 2025-12-31
+
+### ドキュメント
+
+- [ ] **DOC-M01**: API仕様書の作成
+  - ファイル: `docs/api/README.md`（新規）
+  - 問題: APIエンドポイントの仕様書が存在しない
+  - 対応: 全40エンドポイントのリクエスト/レスポンス形式、認証・認可要件、エラーコードを文書化
+  - 内容:
+    - エンドポイント一覧（Accounts, Tasks, Areas, Comments, Tags, Assigns, AccountAreas, TagAccounts, Authentications）
+    - リクエスト/レスポンスJSON形式
+    - 認証（JWT）・認可（admin_only, 担当者）要件
+    - HTTPステータスコードとエラーレスポンス形式
+    - 破壊的変更履歴（`/docs/done/DONE-2025-12-31.md` から抽出）
+  - 工数: 4h
 
 ---
 
-## Phase 4: Tags コントローラー完了 (優先度: 低)
+## Low（バックログ）
 
-### 移行済み ✅ - PR #77
-- [x] `GET /api/tags` (index)
-  - Service: `Services::Tags::Index`
-  - Repository: `all_tags`
-  - Presenter: `TagPresenter.render_tags`
-  - 認証必須化
-- [x] `GET /api/tags/:id` (show) ※新規追加
-  - Contract: `Contracts::Tags::Show` (継承: IdContract)
-  - Service: `Services::Tags::Show`
-  - Repository: `find_by_id`
-  - Presenter: `TagPresenter.render_tag`
-  - 認証必須化
-- [x] `POST /api/tags` (create)
-  - Contract: `Contracts::Tags::Create`
-  - Service: `Services::Tags::Create`
-  - Repository: `build`, `save`
-  - Presenter: `TagPresenter.render_tag`
-  - Policy: `TagPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-- [x] `PUT /api/tags/:id` (update)
-  - Contract: `Contracts::Tags::Update`
-  - Service: `Services::Tags::Update`
-  - Repository: `find_by_id_with_lock`, `update`
-  - Presenter: `TagPresenter.render_tag`
-  - Policy: `TagPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-  - トランザクション + 悲観ロック
-- [x] `DELETE /api/tags/:id` (destroy)
-  - Contract: `Contracts::Tags::Destroy` (継承: IdContract)
-  - Service: `Services::Tags::Destroy`
-  - Repository: `find_by_id_with_lock`, `destroy`
-  - Policy: `TagPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-  - トランザクション + 悲観ロック
-  - FK制約エラー処理（409 Conflict）
+### パフォーマンス
 
-作成ファイル:
-- `app/contracts/tags/` - id_contract, show, destroy, create, update
-- `app/services/tags/` - index, show, create, update, destroy, repository, result
-- `app/policies/tag_policy.rb`
-- `app/presenters/tag_presenter.rb`
+- [ ] **PERF-L01**: N+1クエリ監視ツールの導入
+  - ファイル: `Gemfile`, `config/environments/development.rb`
+  - 問題: N+1クエリの検出が手動確認のみ
+  - 対応: `bullet` gem導入、開発環境でN+1を自動検出
+  - 備考: `Task.current_assignee?` は対策済み
+  - 工数: 1h
 
-エラーハンドリング:
-- `Deadlocked`, `LockWaitTimeout` → 503 Service Unavailable
-- `RecordNotUnique`, `InvalidForeignKey` → 409 Conflict
-- `StatementInvalid` → 500 Internal Server Error
-- ArgumentError（Presenterでnil受信時）
+### ログ改善
+
+- [ ] **LOG-L01**: ログレベル統一基準の策定
+  - ファイル: `docs/logging-guidelines.md`（新規）
+  - 問題: `warn` / `error` の使い分け基準が明確でない
+  - 対応: ログレベル使用ガイドラインを作成
+  - 工数: 1h
+
+### リファクタリング
+
+- [ ] **REF-L01**: AssignCycle#deactivation の冗長な self 削除
+  - ファイル: `app/models/assign_cycle.rb:36`
+  - 問題: `self.update` の `self` が冗長
+  - 対応: `update(is_active: false)` に変更
+  - 工数: 0.5h
+
+- [ ] **REF-L02**: AssignCycle.unfulfilleds のスコープ化
+  - ファイル: `app/models/assign_cycle.rb:41-44`
+  - 問題: クラスメソッドがシンプルなクエリのみで冗長
+  - 対応: `scope :unfulfilleds, -> { where(is_active: true) }` に変更
+  - 工数: 0.5h
 
 ---
 
-## Phase 5: 中間テーブル操作 (優先度: 低)
+## 備考
 
-### Assigns ✅ - PR #78
-- [x] `POST /api/tasks/assign/cycle` (cycle_create)
-  - Contract: `Contracts::Assigns::CycleCreate`
-  - Service: `Services::Assigns::CycleCreate`
-  - Repository: `find_task_with_lock`, `deactivate_all_cycles`, `create_cycle`
-  - Presenter: `AssignCyclePresenter.render_cycle`
-  - Policy: `AccountPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-  - トランザクション + 悲観ロック
-  - 既存サイクル非活性化 + 自動割り当て実行
-  - AssignCycle#assign を `.save!` に修正（サイレントエラー防止）
-
-作成ファイル:
-- `app/contracts/assigns/cycle_create.rb`
-- `app/services/assigns/cycle_create.rb`, `repository.rb`, `result.rb`
-- `app/presenters/assign_cycle_presenter.rb`
-
-エラーハンドリング:
-- `Deadlocked`, `LockWaitTimeout` → 503 Service Unavailable
-- `RecordInvalid` → 422 Unprocessable Entity（詳細メッセージ付き）
-- `StatementInvalid` → 500 Internal Server Error
-- nil cycle → ArgumentError（Controller/Presenterで検出）
-
-### AccountAreas ✅ - PR #79
-- [x] `POST /api/account_areas` (create)
-  - Contract: `Contracts::AccountAreas::Create`
-  - Service: `Services::AccountAreas::Create`
-  - Repository: `find_account`, `find_area`, `area_exists?`, `add_area`, `get_areas`
-  - Presenter: `AreaPresenter.render_areas`（既存）
-  - Policy: `AccountPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-  - 重複追加時 → 409 Conflict
-- [x] `DELETE /api/account_areas/:id` (destroy)
-  - Contract: `Contracts::AccountAreas::Destroy`
-  - Service: `Services::AccountAreas::Destroy`
-  - Repository: `find_account`, `find_area`, `area_exists?`, `remove_area`, `get_areas`
-  - Presenter: `AreaPresenter.render_areas`（既存）
-  - Policy: `AccountPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-
-作成ファイル:
-- `app/contracts/account_areas/create.rb`, `destroy.rb`
-- `app/services/account_areas/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
-
-エラーハンドリング:
-- `RecordNotUnique` → ログ出力 + false返却（レースコンディション対応）
-- `RecordNotDestroyed` → ログ出力 + false返却
-- `StatementInvalid` → 500 Internal Server Error
-
-### TagAccounts ✅ - PR #80
-- [x] `POST /api/tag_accounts` (create)
-  - Contract: `Contracts::TagAccounts::Create`
-  - Service: `Services::TagAccounts::Create`
-  - Repository: `find_account`, `find_tag`, `tag_exists?`, `add_tag`, `get_tags`
-  - Presenter: `TagPresenter.render_tags`（既存）
-  - Policy: `AccountPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-  - 重複追加時 → 409 Conflict
-- [x] `DELETE /api/tag_accounts/:id` (destroy)
-  - Contract: `Contracts::TagAccounts::Destroy`
-  - Service: `Services::TagAccounts::Destroy`
-  - Repository: `find_account`, `find_tag`, `tag_exists?`, `remove_tag`, `get_tags`
-  - Presenter: `TagPresenter.render_tags`（既存）
-  - Policy: `AccountPolicy#admin_only?`
-  - 認証必須化、認可追加（admin_only）
-
-作成ファイル:
-- `app/contracts/tag_accounts/create.rb`, `destroy.rb`
-- `app/services/tag_accounts/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
-
-エラーハンドリング:
-- `RecordNotUnique` → ログ出力 + false返却（レースコンディション対応）
-- `RecordNotDestroyed` → ログ出力 + false返却
-- `StatementInvalid` → 500 Internal Server Error
+- **4層アーキテクチャ移行は100%完了**（40/40エンドポイント）
+- **セキュリティ対策完了**: SEC-H01（レート制限）、SEC-M01（CORS設定確認）
+- **RuboCop: 286ファイル、違反なし**（LINT-M01でdb/schema.rb除外設定追加）
+- RSpec: 1723テスト全Pass
+- DOC-M01（API仕様書）はフロントエンド開発者・外部連携時に必須
+- Low優先度タスクは次スプリント以降で対応
 
 ---
 
-## 移行時の共通チェックリスト
+## 課題の出典
 
-### Contract作成時
-- [ ] ActiveModel::Model を include
-- [ ] 必須バリデーション (presence)
-- [ ] 型バリデーション (inclusion, format)
-- [ ] `self.call(params)` メソッドで Result を返す
-- [ ] テスト: 正常系 + 異常系（空、nil、不正値）
-
-### Service作成時
-- [ ] Repository を DI で受け取る
-- [ ] 認証チェック（必要な場合）
-- [ ] Contract呼び出し
-- [ ] Result オブジェクトで成功/失敗を返す
-- [ ] テスト: 正常系 + 異常系 + DI検証
-
-### Repository追加時
-- [ ] Model への委譲のみ
-- [ ] DB操作ロジックを含めない
-- [ ] テスト: Model呼び出し確認
-
-### Presenter追加/修正時
-- [ ] フィールド名の統一（task_title等）
-- [ ] 不要なフィールドを含めない
-- [ ] テスト: 出力形式の確認
-
-### Controller修正時
-- [ ] `before_action :authenticated?` 追加
-- [ ] `render_result` ブロックで Presenter 呼び出し
-- [ ] private メソッドで params 整形
-- [ ] テスト: HTTPステータス + レスポンス形式
+| ID | 出典 | 優先度 | 状態 |
+|----|------|--------|------|
+| SEC-H01 | 総合レビュー 2025-12-31 | High | ✅ 完了 |
+| SEC-M01 | 総合レビュー 2025-12-31 | Medium | ✅ 完了 |
+| LINT-M01 | 総合レビュー 2025-12-31（RuboCop実行結果） | Medium | ✅ 完了 |
+| DOC-M01 | 総合レビュー 2025-12-31 | Medium | 未着手 |
+| PERF-L01 | 総合レビュー 2025-12-31 | Low | 未着手 |
+| LOG-L01 | 総合レビュー 2025-12-31 | Low | 未着手 |
+| REF-L01, REF-L02 | 総合レビュー 2025-12-31（コードレビュー） | Low | 未着手 |
 
 ---
 
-## 既知の破壊的変更
+## 完了履歴
 
-| エンドポイント | 変更内容 | 対応PR |
-|--------------|---------|-------|
-| `GET /api/tasks` | 認証必須化、`title` → `task_title` | #62 |
-| `POST /api/tasks` | 認証必須化、レスポンス形式変更 | #61 |
-| `GET /api/tasks/:id` | 認証必須化、Presenter経由レスポンス | - |
-| `PUT /api/tasks/:id` | 認証必須化、認可追加(admin+担当者)、`is_complete`削除、Presenter経由レスポンス | - |
-| `DELETE /api/tasks/:id` | 認証必須化、認可追加(admin_only)、レスポンス: 204→200+message | - |
-| `PUT /api/tasks/:id/ng` | 認証必須化、認可追加(admin+担当者)、errors追加 | - |
-| `GET /api/unfulfilled-count` | 認証必須化 | - |
-| `GET /api/completed-data` | 認証必須化 | - |
-| `GET /api/account/tasks` | 認証必須化、認可追加(admin+自分)、`title`→`task_title` | - |
-| `GET /api/areas` | 認証必須化 | #75 |
-| `GET /api/areas/:id` | 認証必須化 | #75 |
-| `POST /api/areas` | 認証必須化、認可追加(admin_only) | #75 |
-| `PUT /api/areas/:id` | 認証必須化、認可追加(admin_only)、悲観ロック | #75 |
-| `DELETE /api/areas/:id` | 認証必須化、認可追加(admin_only)、悲観ロック、FK制約→409 | #75 |
-| `GET /api/comments` | 認証必須化、認可追加(admin=全部/member=自分+admin) | #76 |
-| `GET /api/comments/:id` | 認証必須化、認可追加(admin/所有者/adminコメント) | #76 |
-| `POST /api/comments` | 認証必須化、account_id自動設定、Presenter経由レスポンス | #76 |
-| `PUT /api/comments/:id` | 認証必須化、認可追加(admin+所有者)、悲観ロック | #76 |
-| `DELETE /api/comments/:id` | 認証必須化、認可追加(admin+所有者)、悲観ロック、レスポンス: message追加 | #76 |
-| `GET /api/tags` | 認証必須化 | #77 |
-| `GET /api/tags/:id` | 新規追加、認証必須化 | #77 |
-| `POST /api/tags` | 認証必須化、認可追加(admin_only) | #77 |
-| `PUT /api/tags/:id` | 認証必須化、認可追加(admin_only)、悲観ロック | #77 |
-| `DELETE /api/tags/:id` | 認証必須化、認可追加(admin_only)、悲観ロック、FK制約→409、レスポンス: message追加 | #77 |
-| `POST /api/tasks/assign/cycle` | 認証必須化、認可追加(admin_only)、悲観ロック、既存サイクル非活性化、自動割り当て実行、レスポンス: 200→201 | #78 |
-| `POST /api/account_areas` | 認証必須化、認可追加(admin_only)、重複追加→409 | #79 |
-| `DELETE /api/account_areas/:id` | 認証必須化、認可追加(admin_only) | #79 |
-| `POST /api/tag_accounts` | 認証必須化、認可追加(admin_only)、重複追加→409 | #80 |
-| `DELETE /api/tag_accounts/:id` | 認証必須化、認可追加(admin_only) | #80 |
+| 日付 | ID | タスク | PR |
+|------|-----|--------|-----|
+| 2025-12-31 | SEC-H01 | レート制限の導入（rack-attack） | #81 |
+| 2025-12-31 | SEC-M01 | 本番環境CORS設定の確認 | - (確認のみ) |
+| 2025-12-31 | LINT-M01 | db/schema.rb RuboCop除外設定 | #82 |
 
 ---
 
-## 参考: 既存の4層実装例
+## 過去の完了タスク
 
-### Accounts CRUD
-- `app/contracts/accounts/create.rb`
-- `app/services/accounts/create.rb`
-- `app/services/accounts/repository.rb`
-- `app/presenters/account_presenter.rb`
-- `app/policies/account_policy.rb`
-
-### Authentications Login
-- `app/contracts/authentications/login.rb`
-- `app/services/authentications/login.rb`
-
-### Tasks Index/Create/Show/Update
-- `app/contracts/tasks/index.rb`, `create.rb`, `show.rb`, `update.rb`
-- `app/services/tasks/index.rb`, `create.rb`, `show.rb`, `update.rb`
-- `app/services/tasks/repository.rb`
-- `app/presenters/task_presenter.rb`
-
-### Areas CRUD
-- `app/contracts/areas/id_contract.rb`, `show.rb`, `destroy.rb`, `create.rb`, `update.rb`
-- `app/services/areas/index.rb`, `show.rb`, `create.rb`, `update.rb`, `destroy.rb`
-- `app/services/areas/repository.rb`, `result.rb`
-- `app/presenters/area_presenter.rb`
-- `app/policies/area_policy.rb`
-
-### Comments CRUD
-- `app/contracts/comments/id_contract.rb`, `index.rb`, `show.rb`, `destroy.rb`, `create.rb`, `update.rb`
-- `app/services/comments/index.rb`, `show.rb`, `create.rb`, `update.rb`, `destroy.rb`
-- `app/services/comments/repository.rb`, `result.rb`
-- `app/presenters/comment_presenter.rb`
-- `app/policies/comment_policy.rb`
-- 特徴: 複合認可ルール（admin/所有者/adminコメント閲覧可）、包括的例外処理
-
-### Tags CRUD
-- `app/contracts/tags/id_contract.rb`, `show.rb`, `destroy.rb`, `create.rb`, `update.rb`
-- `app/services/tags/index.rb`, `show.rb`, `create.rb`, `update.rb`, `destroy.rb`
-- `app/services/tags/repository.rb`, `result.rb`
-- `app/presenters/tag_presenter.rb`
-- `app/policies/tag_policy.rb`
-- 特徴: admin_only認可、ArgumentErrorパターン（Presenter）、FK制約エラー処理
-
-### Assigns CycleCreate
-- `app/contracts/assigns/cycle_create.rb`
-- `app/services/assigns/cycle_create.rb`, `repository.rb`, `result.rb`
-- `app/presenters/assign_cycle_presenter.rb`
-- 特徴: admin_only認可、悲観ロック、既存サイクル非活性化、自動割り当て、nil cycleガード
-
-### AccountAreas Create/Destroy
-- `app/contracts/account_areas/create.rb`, `destroy.rb`
-- `app/services/account_areas/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
-- 特徴: admin_only認可、重複追加→409 Conflict、RecordNotUnique/RecordNotDestroyedハンドリング
-
-### TagAccounts Create/Destroy
-- `app/contracts/tag_accounts/create.rb`, `destroy.rb`
-- `app/services/tag_accounts/create.rb`, `destroy.rb`, `repository.rb`, `result.rb`
-- 特徴: admin_only認可、重複追加→409 Conflict、RecordNotUnique/RecordNotDestroyedハンドリング、TagPresenter活用
+2025-12-31以前に完了したタスク（4層アーキテクチャ移行40件）は `/docs/done/DONE-2025-12-31.md` を参照。
 
 ---
 
-## 関連ドキュメント
+## 総合評価（2025-12-31レビュー）
 
-- `CLAUDE.md`: アーキテクチャ詳細、コーディング規約
-- `ARCHITECTURE.md`: 設計思想（存在する場合）
+| カテゴリ | 評価 | 備考 |
+|----------|------|------|
+| アーキテクチャ | ⭐⭐⭐⭐⭐ | 4層アーキテクチャ100%完了 |
+| セキュリティ | ⭐⭐⭐⭐⭐ | レート制限・CORS設定完了（SEC-H01, SEC-M01） |
+| テスト品質 | ⭐⭐⭐⭐⭐ | 1723テスト全Pass |
+| コード品質 | ⭐⭐⭐⭐⭐ | RuboCop 286ファイル違反なし（LINT-M01完了） |
+| ドキュメント | ⭐⭐⭐⭐☆ | API仕様書未作成（DOC-M01） |
+
+**総合**: ⭐⭐⭐⭐⭐ (4.8/5) - プロダクション対応可能な高品質バックエンド

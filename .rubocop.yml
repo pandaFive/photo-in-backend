@@ -175,6 +175,7 @@ Style/FrozenStringLiteralComment:
     - 'actionmailbox/db/migrate/**/*.rb'
     - 'actiontext/db/migrate/**/*.rb'
     - '**/*.md'
+    - 'db/schema.rb'  # 自動生成ファイルのため除外
 
 Style/MapToHash:
   Enabled: true
