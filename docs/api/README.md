@@ -122,6 +122,19 @@ Authorization: Bearer <TOKEN>
 | PUT | /api/comments/:id | コメント更新 |
 | DELETE | /api/comments/:id | コメント削除 |
 
+### 認証必須（全ロール）- 参照系
+
+| メソッド | パス | 説明 |
+|----------|------|------|
+| GET | /api/areas | エリア一覧 |
+| GET | /api/areas/:id | エリア詳細 |
+| GET | /api/tags | タグ一覧 |
+| GET | /api/tags/:id | タグ詳細 |
+| GET | /api/tasks | タスク一覧 |
+| GET | /api/tasks/:id | タスク詳細 |
+| GET | /api/unfulfilled-count | 未完了タスク数 |
+| GET | /api/completed-data | 完了データ取得 |
+
 ### 認証必須（管理者のみ）
 
 | メソッド | パス | 説明 |
@@ -131,31 +144,18 @@ Authorization: Bearer <TOKEN>
 | GET | /api/accounts/:id | アカウント詳細 |
 | PUT | /api/accounts/:id | アカウント更新 |
 | DELETE | /api/accounts/:id | アカウント削除 |
-| GET | /api/areas | エリア一覧 |
 | POST | /api/areas | エリア作成 |
-| GET | /api/areas/:id | エリア詳細 |
 | PUT | /api/areas/:id | エリア更新 |
 | DELETE | /api/areas/:id | エリア削除 |
-| GET | /api/tags | タグ一覧 |
 | POST | /api/tags | タグ作成 |
-| GET | /api/tags/:id | タグ詳細 |
 | PUT | /api/tags/:id | タグ更新 |
 | DELETE | /api/tags/:id | タグ削除 |
-| GET | /api/tasks | タスク一覧 |
 | POST | /api/tasks | タスク作成 |
-| GET | /api/tasks/:id | タスク詳細 |
 | PUT | /api/tasks/:id | タスク更新 |
 | DELETE | /api/tasks/:id | タスク削除 |
 | POST | /api/tasks/:id/tag | タスクにタグ追加 |
 | DELETE | /api/tasks/:id/tag | タスクからタグ削除 |
 | POST | /api/tasks/:id/newCycle | 新規サイクル作成 |
-| GET | /api/unfulfilled-count | 未完了タスク数 |
-| GET | /api/completed-data | 完了データ取得 |
-| GET | /api/assigns | アサイン一覧 |
-| POST | /api/assigns | アサイン作成 |
-| GET | /api/assigns/:id | アサイン詳細 |
-| PUT | /api/assigns/:id | アサイン更新 |
-| DELETE | /api/assigns/:id | アサイン削除 |
 | POST | /api/tasks/assign/cycle | サイクル一括割り当て |
 | POST | /api/account_areas | アカウント-エリア紐付け |
 | DELETE | /api/account_areas/:id | アカウント-エリア紐付け解除 |
@@ -382,7 +382,7 @@ Authorization: Bearer <TOKEN>
 
 エリア一覧を取得します。
 
-**認可**: 管理者のみ
+**認可**: 全ロール
 
 #### レスポンス（200 OK）
 
@@ -399,7 +399,7 @@ Authorization: Bearer <TOKEN>
 
 エリア詳細を取得します。
 
-**認可**: 管理者のみ
+**認可**: 全ロール
 
 #### レスポンス（200 OK）
 
@@ -418,12 +418,16 @@ Authorization: Bearer <TOKEN>
 #### リクエスト
 
 ```json
-{ "name": "名古屋" }
+{
+  "area": {
+    "name": "名古屋"
+  }
+}
 ```
 
 | パラメータ | 型 | 必須 | 説明 | 制約 |
 |------------|-----|------|------|------|
-| name | string | Yes | エリア名 | 最大32文字 |
+| area.name | string | Yes | エリア名 | 最大32文字 |
 
 #### レスポンス（201 Created）
 
@@ -442,7 +446,11 @@ Authorization: Bearer <TOKEN>
 #### リクエスト
 
 ```json
-{ "name": "愛知" }
+{
+  "area": {
+    "name": "愛知"
+  }
+}
 ```
 
 #### レスポンス（200 OK）
@@ -469,7 +477,7 @@ Authorization: Bearer <TOKEN>
 
 タグ一覧を取得します。
 
-**認可**: 管理者のみ
+**認可**: 全ロール
 
 #### レスポンス（200 OK）
 
@@ -486,7 +494,7 @@ Authorization: Bearer <TOKEN>
 
 タグ詳細を取得します。
 
-**認可**: 管理者のみ
+**認可**: 全ロール
 
 #### レスポンス（200 OK）
 
@@ -505,12 +513,16 @@ Authorization: Bearer <TOKEN>
 #### リクエスト
 
 ```json
-{ "name": "重要" }
+{
+  "tag": {
+    "name": "重要"
+  }
+}
 ```
 
 | パラメータ | 型 | 必須 | 説明 | 制約 |
 |------------|-----|------|------|------|
-| name | string | Yes | タグ名 | 最大32文字 |
+| tag.name | string | Yes | タグ名 | 最大32文字 |
 
 #### レスポンス（201 Created）
 
@@ -529,7 +541,11 @@ Authorization: Bearer <TOKEN>
 #### リクエスト
 
 ```json
-{ "name": "最重要" }
+{
+  "tag": {
+    "name": "最重要"
+  }
+}
 ```
 
 #### レスポンス（200 OK）
@@ -556,7 +572,7 @@ Authorization: Bearer <TOKEN>
 
 タスク一覧を取得します。
 
-**認可**: 管理者のみ
+**認可**: 全ロール
 
 #### レスポンス（200 OK）
 
@@ -579,7 +595,7 @@ Authorization: Bearer <TOKEN>
 
 タスク詳細を取得します。
 
-**認可**: 管理者のみ
+**認可**: 全ロール
 
 #### レスポンス（200 OK）
 
@@ -617,10 +633,20 @@ Authorization: Bearer <TOKEN>
     "task_title": "撮影タスク001",
     "area_name": "東京",
     "assign_cycle_id": 5,
+    "history_id": 10,
     "created_at": "2025-12-31T12:00:00.000+09:00"
   }
 ]
 ```
+
+| フィールド | 型 | 説明 |
+|------------|-----|------|
+| id | integer | タスクID |
+| task_title | string | タスクタイトル |
+| area_name | string | エリア名 |
+| assign_cycle_id | integer | 割り当てサイクルID |
+| history_id | integer | 割り当て履歴ID（完了/NG操作に使用） |
+| created_at | string | 作成日時 |
 
 ---
 
@@ -634,15 +660,17 @@ Authorization: Bearer <TOKEN>
 
 ```json
 {
-  "task_title": "新規撮影タスク",
-  "area_id": 1
+  "task": {
+    "task_title": "新規撮影タスク",
+    "area_id": 1
+  }
 }
 ```
 
 | パラメータ | 型 | 必須 | 説明 | 制約 |
 |------------|-----|------|------|------|
-| task_title | string | Yes | タスクタイトル | 最大256文字 |
-| area_id | integer | No | エリアID | - |
+| task.task_title | string | Yes | タスクタイトル | 最大256文字 |
+| task.area_id | integer | No | エリアID | - |
 
 #### レスポンス（201 Created）
 
@@ -660,8 +688,10 @@ Authorization: Bearer <TOKEN>
 
 ```json
 {
-  "task_title": "更新後タイトル",
-  "area_id": 2
+  "task": {
+    "task_title": "更新後タイトル",
+    "area_id": 2
+  }
 }
 ```
 
@@ -689,10 +719,25 @@ Authorization: Bearer <TOKEN>
 
 **認可**: 担当者本人または管理者
 
+#### リクエスト
+
+```json
+{
+  "history_id": 10
+}
+```
+
+| パラメータ | 型 | 必須 | 説明 |
+|------------|-----|------|------|
+| history_id | integer | Yes | 割り当て履歴ID |
+
 #### レスポンス（200 OK）
 
 ```json
-{ "message": "Task completed successfully" }
+{
+  "message": "change completed",
+  "result": true
+}
 ```
 
 ---
@@ -703,11 +748,28 @@ Authorization: Bearer <TOKEN>
 
 **認可**: 担当者本人または管理者
 
+#### リクエスト
+
+```json
+{
+  "history_id": 10
+}
+```
+
+| パラメータ | 型 | 必須 | 説明 |
+|------------|-----|------|------|
+| history_id | integer | Yes | 割り当て履歴ID |
+
 #### レスポンス（200 OK）
 
 ```json
-{ "message": "Task marked as NG" }
+{
+  "message": "complete",
+  "result": true
+}
 ```
+
+**備考**: `message` は再割り当て成功時 `"complete"`、再割り当て失敗時 `"failed"` となる
 
 ---
 
@@ -777,13 +839,15 @@ Authorization: Bearer <TOKEN>
 
 未完了（アクティブ）タスク数を取得します。
 
-**認可**: 管理者のみ
+**認可**: 全ロール
 
 #### レスポンス（200 OK）
 
-```json
-{ "count": 15 }
 ```
+15
+```
+
+**備考**: レスポンスは整数値のみ（JSONオブジェクトではない）
 
 ---
 
@@ -791,7 +855,7 @@ Authorization: Bearer <TOKEN>
 
 完了データ統計を取得します。
 
-**認可**: 管理者のみ
+**認可**: 全ロール
 
 #### レスポンス（200 OK）
 
@@ -817,7 +881,7 @@ Authorization: Bearer <TOKEN>
 
 | パラメータ | 型 | 説明 |
 |------------|-----|------|
-| task_id | integer | タスクIDでフィルタ |
+| taskId | integer | タスクIDでフィルタ |
 
 #### レスポンス（200 OK）
 
@@ -907,72 +971,10 @@ Authorization: Bearer <TOKEN>
 
 ## Assigns API
 
-### GET /api/assigns
+タスクの割り当て（アサイン）を管理するAPIです。
 
-アサイン履歴一覧を取得します。
-
-**認可**: 管理者のみ
-
-#### レスポンス（200 OK）
-
-アサイン履歴配列
-
----
-
-### GET /api/assigns/:id
-
-アサイン詳細を取得します。
-
-**認可**: 管理者のみ
-
-#### レスポンス（200 OK）
-
-アサイン詳細情報
-
----
-
-### POST /api/assigns
-
-アサインを作成します。
-
-**認可**: 管理者のみ
-
-#### リクエスト
-
-```json
-{
-  "account_id": 1,
-  "assign_cycle_id": 5
-}
-```
-
-#### レスポンス（201 Created）
-
-作成されたアサイン情報
-
----
-
-### PUT /api/assigns/:id
-
-アサインを更新します。
-
-**認可**: 管理者のみ
-
-#### レスポンス（200 OK）
-
-更新後のアサイン情報
-
----
-
-### DELETE /api/assigns/:id
-
-アサインを削除します。
-
-**認可**: 管理者のみ
-
-#### レスポンス（204 No Content）
-
-レスポンスボディなし
+**備考**: 個別のアサインCRUD（GET/POST/PUT/DELETE /api/assigns）は現在未実装です。
+割り当て操作は `POST /api/tasks/assign/cycle` および各タスクの `completed`/`ng` エンドポイントを使用してください。
 
 ---
 
@@ -993,10 +995,23 @@ Authorization: Bearer <TOKEN>
 
 ```json
 {
-  "assigned_count": 10,
-  "failed_count": 2
+  "id": 25,
+  "task_id": 1,
+  "is_active": true,
+  "created_at": "2025-12-31T12:00:00.000+09:00",
+  "updated_at": "2025-12-31T12:00:00.000+09:00"
 }
 ```
+
+| フィールド | 型 | 説明 |
+|------------|-----|------|
+| id | integer | サイクルID |
+| task_id | integer | タスクID |
+| is_active | boolean | アクティブ状態 |
+| created_at | string | 作成日時 |
+| updated_at | string | 更新日時 |
+
+**備考**: サイクル割り当て実行後、作成/更新されたサイクル情報を返す
 
 ---
 
