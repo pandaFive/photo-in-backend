@@ -13,8 +13,8 @@
 | Critical | 0 | 0 | 0 |
 | High | 1 | 1 | 0 |
 | Medium | 3 | 3 | 0 |
-| Low | 4 | 0 | 4 |
-| **合計** | **8** | **4** | **4** |
+| Low | 4 | 1 | 3 |
+| **合計** | **8** | **5** | **3** |
 
 ---
 
@@ -83,12 +83,17 @@
 
 ### パフォーマンス
 
-- [ ] **PERF-L01**: N+1クエリ監視ツールの導入
+- [x] **PERF-L01**: N+1クエリ監視ツールの導入 ✅ PR #84
   - ファイル: `Gemfile`, `config/environments/development.rb`
-  - 問題: N+1クエリの検出が手動確認のみ
-  - 対応: `bullet` gem導入、開発環境でN+1を自動検出
-  - 備考: `Task.current_assignee?` は対策済み
-  - 工数: 1h
+  - 対応内容:
+    - `bullet` gem導入（development, testグループ）
+    - 開発環境でN+1クエリを自動検出
+    - Railsログ出力（`Bullet.rails_logger = true`）
+    - `log/bullet.log`に記録（`Bullet.bullet_logger = true`）
+    - APIモードのためフッター無効（`Bullet.add_footer = false`）
+    - 例外は発生させない（`Bullet.raise = false`）
+  - Gemfile整理: 重複した`group :development, :test`ブロックを統合
+  - 完了日: 2025-12-31
 
 ### ログ改善
 
@@ -120,8 +125,9 @@
 - **セキュリティ対策完了**: SEC-H01（レート制限）、SEC-M01（CORS設定確認）
 - **RuboCop: 287ファイル、違反なし**（LINT-M01でdb/schema.rb除外設定追加）
 - **API仕様書作成完了**: DOC-M01（`docs/api/README.md`）
+- **N+1クエリ監視導入**: PERF-L01（bullet gem）
 - RSpec: 1723テスト全Pass
-- Low優先度タスクは次スプリント以降で対応
+- Low優先度タスク残り3件は次スプリント以降で対応
 
 ---
 
@@ -133,7 +139,7 @@
 | SEC-M01 | 総合レビュー 2025-12-31 | Medium | ✅ 完了 |
 | LINT-M01 | 総合レビュー 2025-12-31（RuboCop実行結果） | Medium | ✅ 完了 |
 | DOC-M01 | 総合レビュー 2025-12-31 | Medium | ✅ 完了 |
-| PERF-L01 | 総合レビュー 2025-12-31 | Low | 未着手 |
+| PERF-L01 | 総合レビュー 2025-12-31 | Low | ✅ 完了 |
 | LOG-L01 | 総合レビュー 2025-12-31 | Low | 未着手 |
 | REF-L01, REF-L02 | 総合レビュー 2025-12-31（コードレビュー） | Low | 未着手 |
 
@@ -147,6 +153,7 @@
 | 2025-12-31 | SEC-M01 | 本番環境CORS設定の確認 | - (確認のみ) |
 | 2025-12-31 | LINT-M01 | db/schema.rb RuboCop除外設定 | #82 |
 | 2025-12-31 | DOC-M01 | API仕様書の作成 | #83 |
+| 2025-12-31 | PERF-L01 | N+1クエリ監視ツール導入（bullet） | #84 |
 
 ---
 
