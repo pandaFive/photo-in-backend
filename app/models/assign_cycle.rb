@@ -26,21 +26,17 @@ class AssignCycle < ApplicationRecord
   end
 
   def completed
-    self.deactivation
+    deactivation
     target = AssignHistory.joins(:assign_cycle)
-                .where(assign_cycles: { id: self.id })
+                .where(assign_cycles: { id: })
                 .where(ng: false)
     target.completed
   end
 
   def deactivation
-    self.update(is_active: false)
+    update(is_active: false)
   end
 
-  class << self
-    def unfulfilleds
-      targets = AssignCycle.where(is_active: true)
-      targets
-    end
-  end
+  # アクティブな割り当てサイクルを取得
+  scope :unfulfilleds, -> { where(is_active: true) }
 end
