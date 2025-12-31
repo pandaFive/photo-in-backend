@@ -97,7 +97,7 @@ Authorization: Bearer <TOKEN>
 
 ### 日時形式
 
-- ISO 8601形式（例: `2025-12-31T12:00:00.000+09:00`）
+- ISO 8601形式（例: `2025-12-31T12:00:00.000Z`）
 
 ---
 
@@ -222,8 +222,8 @@ Authorization: Bearer <TOKEN>
   {
     "id": 1,
     "capacity": 10,
-    "createdAt": "2025-12-31T12:00:00.000+09:00",
-    "updatedAt": "2025-12-31T12:00:00.000+09:00",
+    "createdAt": "2025-12-31T12:00:00.000Z",
+    "updatedAt": "2025-12-31T12:00:00.000Z",
     "name": "山田太郎",
     "area": ["東京", "大阪"],
     "total": 50,
@@ -258,9 +258,9 @@ Authorization: Bearer <TOKEN>
 ```json
 {
   "id": 1,
-  "createdAt": "2025-12-31T12:00:00.000+09:00",
+  "createdAt": "2025-12-31T12:00:00.000Z",
   "capacity": 10,
-  "updatedAt": "2025-12-31T12:00:00.000+09:00",
+  "updatedAt": "2025-12-31T12:00:00.000Z",
   "name": "山田太郎",
   "role": "member"
 }
@@ -285,9 +285,9 @@ Authorization: Bearer <TOKEN>
 ```json
 {
   "id": 1,
-  "createdAt": "2025-12-31T12:00:00.000+09:00",
+  "createdAt": "2025-12-31T12:00:00.000Z",
   "capacity": 10,
-  "updatedAt": "2025-12-31T12:00:00.000+09:00",
+  "updatedAt": "2025-12-31T12:00:00.000Z",
   "name": "山田太郎",
   "role": "member"
 }
@@ -328,9 +328,9 @@ Authorization: Bearer <TOKEN>
 ```json
 {
   "id": 2,
-  "createdAt": "2025-12-31T12:00:00.000+09:00",
+  "createdAt": "2025-12-31T12:00:00.000Z",
   "capacity": 10,
-  "updatedAt": "2025-12-31T12:00:00.000+09:00",
+  "updatedAt": "2025-12-31T12:00:00.000Z",
   "name": "新規ユーザー",
   "role": "member"
 }
@@ -578,20 +578,51 @@ Authorization: Bearer <TOKEN>
 
 **認可**: 全ロール
 
+#### クエリパラメータ
+
+| パラメータ | 型 | 必須 | 説明 |
+|------------|-----|------|------|
+| type | string | Yes | `all`（アクティブタスク）または `ng`（NGタスク） |
+
 #### レスポンス（200 OK）
+
+**type=all の場合:**
 
 ```json
 [
   {
     "id": 1,
     "task_title": "撮影タスク001",
-    "area_id": 1,
     "area_name": "東京",
-    "created_at": "2025-12-31T12:00:00.000+09:00",
-    "updated_at": "2025-12-31T12:00:00.000+09:00"
+    "assign_cycle_id": 5,
+    "created_at": "2025-12-31T12:00:00.000Z"
   }
 ]
 ```
+
+**type=ng の場合:**
+
+```json
+[
+  {
+    "id": 1,
+    "task_title": "撮影タスク001",
+    "area_name": "東京",
+    "history_id": 10,
+    "assign_cycle_id": 5,
+    "created_at": "2025-12-31T12:00:00.000Z"
+  }
+]
+```
+
+| フィールド | 型 | 説明 | type=all | type=ng |
+|------------|-----|------|----------|---------|
+| id | integer | タスクID | ✓ | ✓ |
+| task_title | string | タスクタイトル | ✓ | ✓ |
+| area_name | string | エリア名 | ✓ | ✓ |
+| assign_cycle_id | integer | 割り当てサイクルID | ✓ | ✓ |
+| history_id | integer | 割り当て履歴ID | - | ✓ |
+| created_at | string | 作成日時 | ✓ | ✓ |
 
 ---
 
@@ -609,8 +640,8 @@ Authorization: Bearer <TOKEN>
   "task_title": "撮影タスク001",
   "area_id": 1,
   "area_name": "東京",
-  "created_at": "2025-12-31T12:00:00.000+09:00",
-  "updated_at": "2025-12-31T12:00:00.000+09:00"
+  "created_at": "2025-12-31T12:00:00.000Z",
+  "updated_at": "2025-12-31T12:00:00.000Z"
 }
 ```
 
@@ -638,7 +669,7 @@ Authorization: Bearer <TOKEN>
     "area_name": "東京",
     "assign_cycle_id": 5,
     "history_id": 10,
-    "created_at": "2025-12-31T12:00:00.000+09:00"
+    "created_at": "2025-12-31T12:00:00.000Z"
   }
 ]
 ```
@@ -824,8 +855,8 @@ Authorization: Bearer <TOKEN>
   "id": 10,
   "task_id": 1,
   "is_active": true,
-  "created_at": "2025-12-31T12:00:00.000+09:00",
-  "updated_at": "2025-12-31T12:00:00.000+09:00"
+  "created_at": "2025-12-31T12:00:00.000Z",
+  "updated_at": "2025-12-31T12:00:00.000Z"
 }
 ```
 
@@ -890,7 +921,7 @@ Authorization: Bearer <TOKEN>
     "account_id": 1,
     "account_name": "山田太郎",
     "account_role": "member",
-    "updated_at": "2025-12-31T12:00:00.000+09:00"
+    "updated_at": "2025-12-31T12:00:00.000Z"
   }
 ]
 ```
@@ -1000,8 +1031,8 @@ Authorization: Bearer <TOKEN>
   "id": 25,
   "task_id": 1,
   "is_active": true,
-  "created_at": "2025-12-31T12:00:00.000+09:00",
-  "updated_at": "2025-12-31T12:00:00.000+09:00"
+  "created_at": "2025-12-31T12:00:00.000Z",
+  "updated_at": "2025-12-31T12:00:00.000Z"
 }
 ```
 
@@ -1013,7 +1044,20 @@ Authorization: Bearer <TOKEN>
 | created_at | string | 作成日時 |
 | updated_at | string | 更新日時 |
 
-**備考**: サイクル割り当て実行後、作成/更新されたサイクル情報を返す
+**備考**: 処理された最後のサイクル情報（単一オブジェクト）を返す
+
+#### エラー
+
+| ステータス | 条件 |
+|------------|------|
+| 422 Unprocessable Entity | 割り当て可能なメンバーがいない場合 |
+
+```json
+{
+  "errors": ["割り当て可能なメンバーがいません"],
+  "status": 422
+}
+```
 
 ---
 
