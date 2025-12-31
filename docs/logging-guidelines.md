@@ -45,7 +45,7 @@ Rails.logger.debug "Repository: save result=#{result}"
 Rails.logger.debug "Deactivated #{deactivated_count} cycles for task_id=#{task.id}"
 ```
 
-**注意**: 本番環境では出力されない。機密情報を含めても問題ないが、パスワード等は絶対に含めないこと。
+**注意**: 本番環境では出力されないが、開発環境でも機密情報（パスワード、APIキー、トークン等）は含めないこと。ログファイルが意図せず共有される可能性があるため。
 
 ---
 
@@ -280,9 +280,22 @@ Rails.logger.debug "Processing #{accounts.size} accounts"
 `config/environments/production.rb`:
 
 ```ruby
-config.log_level = :info  # debug は出力しない
-config.log_formatter = ::Logger::Formatter.new
+# STDOUTへのログ出力（コンテナ環境向け）
+config.logger = ActiveSupport::Logger.new(STDOUT)
+  .tap  { |logger| logger.formatter = ::Logger::Formatter.new }
+  .then { |logger| ActiveSupport::TaggedLogging.new(logger) }
+
+# リクエストIDをログに付与（トレーサビリティ向上）
+config.log_tags = [ :request_id ]
+
+# ログレベル（環境変数で上書き可能、デフォルト: info）
+config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
 ```
+
+**ポイント**:
+- `TaggedLogging`: 各ログ行に`request_id`が付与され、リクエスト単位でのログ追跡が可能
+- `RAILS_LOG_LEVEL`: 環境変数でログレベルを動的に変更可能（デバッグ時に`debug`に設定など）
+- `STDOUT`: コンテナ環境（ECS等）ではSTDOUTへの出力が標準
 
 ---
 
@@ -290,11 +303,13 @@ config.log_formatter = ::Logger::Formatter.new
 
 | レベル | 使用箇所数 | 主な用途 |
 |--------|------------|----------|
-| debug | 約20箇所 | Repository層トレース |
-| info | 約25箇所 | 成功した業務操作 |
-| warn | 約50箇所 | バリデーション、認可、not found |
-| error | 約35箇所 | DB接続、ロック、予期しない状態 |
+| debug | 24箇所 | Repository層トレース |
+| info | 26箇所 | 成功した業務操作 |
+| warn | 83箇所 | バリデーション、認可、not found |
+| error | 67箇所 | DB接続、ロック、予期しない状態 |
 | fatal | 0箇所 | 未使用（必要に応じて追加） |
+
+※ 2025年12月31日時点の`app/`ディレクトリ内の使用数
 
 ---
 
